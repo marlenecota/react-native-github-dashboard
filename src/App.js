@@ -6,7 +6,7 @@
  * @flow
  */
 
-import React, {Fragment} from 'react';
+import React, {Fragment, Component} from 'react';
 import {
   SafeAreaView,
   StyleSheet,
@@ -24,11 +24,54 @@ import {
   ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
 
+class GitHubQuery extends Component {
+  async componentDidMount() {
+    let request = new XMLHttpRequest();
+    request.onload = () => {
+      let listOfIssues = JSON.parse(request.responseText);
+      for (let i = 0; i < listOfIssues.length; i++) {
+        console.log(listOfIssues[i].title);
+      }
+
+      let groupedByAssignee = listOfIssues.reduce((accumulator, current) => {
+        let currentAssignee = current['assignee'];
+        let assignee = 'unassigned';
+        if (currentAssignee) {
+          assignee = currentAssignee.login;
+        }
+        if (accumulator[assignee] === undefined) {
+          accumulator[assignee] = [];
+        }
+        accumulator[assignee].push(current.title);
+        return accumulator;
+      }, {});
+
+      console.table(groupedByAssignee);
+    };
+
+    request.onerror = () => {
+      console.log('Error!');
+    };
+    request.open('get', 'https://api.github.com/repos/microsoft/react-native-windows/issues', true);
+    request.setRequestHeader('User-Agent', 'whatever');
+    request.send();
+  }
+
+  render() {
+    return (
+      <View>
+        <Text>Hello!</Text>
+      </View>
+    );
+  }
+}
+
 const App = () => {
   return (
     <Fragment>
       <StatusBar barStyle="dark-content" />
       <SafeAreaView>
+        <GitHubQuery/>
         <ScrollView
           contentInsetAdjustmentBehavior="automatic"
           style={styles.scrollView}>
