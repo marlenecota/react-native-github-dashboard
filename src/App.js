@@ -24,15 +24,19 @@ import {
   ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
 
+class Issue extends Component {
+  render() {
+    return <Text style={styles.body}>{this.props.item.title}</Text>;
+  }
+}
+
 class IssueList extends Component {
   render() {
     return (
       <View>
         <Text style={styles.sectionTitle}>{this.props.assignee}</Text>
         {this.props.list.map(item => (
-          <Text key={item.id} style={styles.body}>
-            {item.title}
-          </Text>
+          <Issue key={item.id} item={item} />
         ))}
       </View>
     );
