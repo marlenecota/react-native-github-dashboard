@@ -24,7 +24,29 @@ import {
   ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
 
+class IssueList extends Component {
+  render() {
+    return (
+      <View>
+        <Text style={styles.sectionTitle}>{this.props.assignee}</Text>
+        {this.props.list.map(item => (
+          <Text key={item.id} style={styles.body}>
+            {item.title}
+          </Text>
+        ))}
+      </View>
+    );
+  }
+}
+
 class GitHubQuery extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      issuesByAssignee: {},
+    };
+  }
+
   processIssue(issue) {
     let issueAssignee = issue.assignee;
     let assignee = 'unassigned';
@@ -32,8 +54,16 @@ class GitHubQuery extends Component {
       assignee = issueAssignee.login;
     }
     return {
+      id: issue.id,
       title: issue.title,
       assignee: assignee,
+      url: issue.html_url,
+      labels: issue.labels.map(value => {
+        return {
+          name: value.name,
+          color: value.color,
+        };
+      }),
     };
   }
 
@@ -55,21 +85,25 @@ class GitHubQuery extends Component {
   }
 
   async queryIssues(pageNumber) {
-    console.log(`Querying for ${pageNumber}`);
-    let request = new XMLHttpRequest();
-    request.onload = () => {
-      this.processIssues(JSON.parse(request.responseText));
-    };
-    request.onerror = () => {
-      console.log('Error!');
-    };
-    request.open(
-      'get',
-      `https://api.github.com/repos/microsoft/react-native-windows/issues?state=open&sort=updated&direction=desc&page=${pageNumber}`,
-      true,
-    );
-    request.setRequestHeader('User-Agent', 'whatever');
-    request.send();
+    return new Promise((resolve, reject) => {
+      console.log(`Querying for ${pageNumber}`);
+      let request = new XMLHttpRequest();
+      request.onload = () => {
+        this.processIssues(JSON.parse(request.responseText));
+        resolve();
+      };
+      request.onerror = () => {
+        console.log('Error!');
+        reject();
+      };
+      request.open(
+        'get',
+        `https://api.github.com/repos/microsoft/react-native-windows/issues?state=open&sort=updated&direction=desc&page=${pageNumber}`,
+        true,
+      );
+      request.setRequestHeader('User-Agent', 'whatever');
+      request.send();
+    });
   }
 
   async queryAllIssues() {
@@ -77,6 +111,10 @@ class GitHubQuery extends Component {
     await this.queryIssues(1);
     await this.queryIssues(2);
     await this.queryIssues(3);
+    console.log('Set state');
+    this.setState({
+      issuesByAssignee: this.issuesByAssignee,
+    });
   }
 
   async componentDidMount() {
@@ -85,9 +123,15 @@ class GitHubQuery extends Component {
 
   render() {
     return (
-      <View>
-        <Text>Hello!</Text>
-      </View>
+      <>
+        {Object.keys(this.state.issuesByAssignee).map(assignee => (
+          <IssueList
+            key={assignee}
+            assignee={assignee}
+            list={this.state.issuesByAssignee[assignee]}
+          />
+        ))}
+      </>
     );
   }
 }
@@ -97,10 +141,10 @@ const App = () => {
     <Fragment>
       <StatusBar barStyle="dark-content" />
       <SafeAreaView>
-        <GitHubQuery/>
         <ScrollView
           contentInsetAdjustmentBehavior="automatic"
           style={styles.scrollView}>
+          <GitHubQuery/>
           <Header />
           {global.HermesInternal == null ? null : (
             <View style={styles.engine}>
