@@ -25,36 +25,53 @@ import {
 } from 'react-native/Libraries/NewAppScreen';
 
 class GitHubQuery extends Component {
-  async componentDidMount() {
+  processIssues(listOfIssues) {
+    for (let i = 0; i < listOfIssues.length; i++) {
+      console.log(listOfIssues[i].title);
+    }
+
+    let groupedByAssignee = listOfIssues.reduce((accumulator, current) => {
+      let currentAssignee = current['assignee'];
+      let assignee = 'unassigned';
+      if (currentAssignee) {
+        assignee = currentAssignee.login;
+      }
+      if (accumulator[assignee] === undefined) {
+        accumulator[assignee] = [];
+      }
+      accumulator[assignee].push(current.title);
+      return accumulator;
+    }, {});
+
+    console.log(groupedByAssignee);
+  }
+
+  async queryIssues(pageNumber) {
+    console.log(`https://api.github.com/repos/microsoft/react-native-windows/issues?page=${pageNumber}`);
     let request = new XMLHttpRequest();
     request.onload = () => {
-      let listOfIssues = JSON.parse(request.responseText);
-      for (let i = 0; i < listOfIssues.length; i++) {
-        console.log(listOfIssues[i].title);
-      }
-
-      let groupedByAssignee = listOfIssues.reduce((accumulator, current) => {
-        let currentAssignee = current['assignee'];
-        let assignee = 'unassigned';
-        if (currentAssignee) {
-          assignee = currentAssignee.login;
-        }
-        if (accumulator[assignee] === undefined) {
-          accumulator[assignee] = [];
-        }
-        accumulator[assignee].push(current.title);
-        return accumulator;
-      }, {});
-
-      console.table(groupedByAssignee);
+      this.processIssues(JSON.parse(request.responseText));
     };
 
     request.onerror = () => {
       console.log('Error!');
     };
-    request.open('get', 'https://api.github.com/repos/microsoft/react-native-windows/issues', true);
+    request.open(
+      'get',
+      `https://api.github.com/repos/microsoft/react-native-windows/issues?page=${pageNumber}`,
+      true,
+    );
     request.setRequestHeader('User-Agent', 'whatever');
     request.send();
+  }
+
+  async queryAllIssues() {
+    await this.queryIssues(1);
+    await this.queryIssues(2);
+  }
+
+  async componentDidMount() {
+    this.queryAllIssues();
   }
 
   render() {
