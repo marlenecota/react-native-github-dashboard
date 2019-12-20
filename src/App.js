@@ -25,21 +25,29 @@ import {
 } from 'react-native/Libraries/NewAppScreen';
 
 class GitHubQuery extends Component {
+  processIssue(issue) {
+    let issueAssignee = issue.assignee;
+    let assignee = 'unassigned';
+    if (issueAssignee) {
+      assignee = issueAssignee.login;
+    }
+    return {
+      title: issue.title,
+      assignee: assignee,
+    };
+  }
+
   processIssues(listOfIssues) {
     for (let i = 0; i < listOfIssues.length; i++) {
       console.log(listOfIssues[i].title);
     }
 
     this.issuesByAssignee = listOfIssues.reduce((accumulator, current) => {
-      let currentAssignee = current.assignee;
-      let assignee = 'unassigned';
-      if (currentAssignee) {
-        assignee = currentAssignee.login;
+      let issue = this.processIssue(current);
+      if (accumulator[issue.assignee] === undefined) {
+        accumulator[issue.assignee] = [];
       }
-      if (accumulator[assignee] === undefined) {
-        accumulator[assignee] = [];
-      }
-      accumulator[assignee].push(current.title);
+      accumulator[issue.assignee].push(issue);
       return accumulator;
     }, this.issuesByAssignee);
 
@@ -47,18 +55,17 @@ class GitHubQuery extends Component {
   }
 
   async queryIssues(pageNumber) {
-    console.log(`https://api.github.com/repos/microsoft/react-native-windows/issues?page=${pageNumber}`);
+    console.log(`Querying for ${pageNumber}`);
     let request = new XMLHttpRequest();
     request.onload = () => {
       this.processIssues(JSON.parse(request.responseText));
     };
-
     request.onerror = () => {
       console.log('Error!');
     };
     request.open(
       'get',
-      `https://api.github.com/repos/microsoft/react-native-windows/issues?page=${pageNumber}`,
+      `https://api.github.com/repos/microsoft/react-native-windows/issues?state=open&sort=updated&direction=desc&page=${pageNumber}`,
       true,
     );
     request.setRequestHeader('User-Agent', 'whatever');
@@ -69,6 +76,7 @@ class GitHubQuery extends Component {
     this.issuesByAssignee = {};
     await this.queryIssues(1);
     await this.queryIssues(2);
+    await this.queryIssues(3);
   }
 
   async componentDidMount() {
