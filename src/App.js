@@ -26,7 +26,18 @@ import {
 
 class Issue extends Component {
   render() {
-    return <Text style={styles.body}>{this.props.item.title}</Text>;
+    return (
+      <View>
+        <Text style={styles.body}>{this.props.item.title}</Text>
+        {this.props.item.labels.map(label => {
+          return (
+            <View key={label.name} style={{backgroundColor: '#' + label.color}}>
+              <Text>{label.name}</Text>
+            </View>
+          );
+        })}
+      </View>
+    );
   }
 }
 
