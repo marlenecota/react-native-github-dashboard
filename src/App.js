@@ -30,8 +30,8 @@ class GitHubQuery extends Component {
       console.log(listOfIssues[i].title);
     }
 
-    let groupedByAssignee = listOfIssues.reduce((accumulator, current) => {
-      let currentAssignee = current['assignee'];
+    this.issuesByAssignee = listOfIssues.reduce((accumulator, current) => {
+      let currentAssignee = current.assignee;
       let assignee = 'unassigned';
       if (currentAssignee) {
         assignee = currentAssignee.login;
@@ -41,9 +41,9 @@ class GitHubQuery extends Component {
       }
       accumulator[assignee].push(current.title);
       return accumulator;
-    }, {});
+    }, this.issuesByAssignee);
 
-    console.log(groupedByAssignee);
+    console.log(this.issuesByAssignee);
   }
 
   async queryIssues(pageNumber) {
@@ -66,6 +66,7 @@ class GitHubQuery extends Component {
   }
 
   async queryAllIssues() {
+    this.issuesByAssignee = {};
     await this.queryIssues(1);
     await this.queryIssues(2);
   }
