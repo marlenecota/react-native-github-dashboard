@@ -44,10 +44,10 @@ class Issue extends Component {
   render() {
     return (
       <View style={styles.issue}>
-        <Text style={styles.body}>{this.props.item.title}</Text>
+        <Text style={styles.issueTitle}>{this.props.item.title}</Text>
         {this.props.item.labels.map(label => {
           return (
-            <View key={label.name} style={{backgroundColor: '#' + label.color}}>
+            <View key={label.name} style={{backgroundColor: '#' + label.color, ...styles.label}}>
               <Text>{label.name}</Text>
             </View>
           );
@@ -61,7 +61,7 @@ class IssueList extends Component {
   render() {
     return (
       <View>
-        <Text style={styles.sectionTitle}>{this.props.assignee}</Text>
+        <Text style={styles.assignee}>{this.props.assignee}</Text>
         {this.props.list.map(item => (
           <Issue key={item.id} item={item} />
         ))}
@@ -150,7 +150,7 @@ class GitHubQuery extends Component {
   async queryAllIssues() {
     this.issuesByAssignee = {};
     let pageNumber = 1;
-    while (true) {
+    while (pageNumber > 0) {
       console.log(`Try page ${pageNumber}`);
       let pageData = undefined;
       try {
@@ -200,40 +200,6 @@ const App = () => {
           contentInsetAdjustmentBehavior="automatic"
           style={styles.scrollView}>
           <GitHubQuery/>
-          <Header />
-          {global.HermesInternal == null ? null : (
-            <View style={styles.engine}>
-              <Text style={styles.footer}>Engine: Hermes</Text>
-            </View>
-          )}
-          <View style={styles.body}>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Step One</Text>
-              <Text style={styles.sectionDescription}>
-                Edit <Text style={styles.highlight}>App.js</Text> to change this
-                screen and then come back to see your edits.
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>See Your Changes</Text>
-              <Text style={styles.sectionDescription}>
-                <ReloadInstructions />
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Debug</Text>
-              <Text style={styles.sectionDescription}>
-                <DebugInstructions />
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Learn More</Text>
-              <Text style={styles.sectionDescription}>
-                Read the docs to discover what to do next:
-              </Text>
-            </View>
-            <LearnMoreLinks />
-          </View>
         </ScrollView>
       </SafeAreaView>
     </Fragment>
@@ -244,41 +210,21 @@ const styles = StyleSheet.create({
   scrollView: {
     backgroundColor: Colors.lighter,
   },
-  engine: {
-    position: 'absolute',
-    right: 0,
-  },
-  body: {
+  issueTitle: {
     backgroundColor: Colors.white,
   },
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
+  assignee: {
     fontSize: 24,
     fontWeight: '600',
     color: Colors.black,
   },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-    color: Colors.dark,
-  },
-  highlight: {
-    fontWeight: '700',
-  },
-  footer: {
-    color: Colors.dark,
-    fontSize: 12,
-    fontWeight: '600',
-    padding: 4,
-    paddingRight: 12,
-    textAlign: 'right',
-  },
   issue: {
     flexDirection: 'row',
+  },
+  label: {
+    paddingLeft: 4,
+    paddingRight: 4,
+    marginLeft: 4,
   }
 });
 
