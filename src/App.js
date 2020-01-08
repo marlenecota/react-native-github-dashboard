@@ -24,10 +24,26 @@ import {
   ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
 
+const offlineData = [
+  require('./offline/page1.json'),
+  require('./offline/page2.json'),
+  require('./offline/page3.json'),
+  require('./offline/page4.json'),
+  require('./offline/page5.json'),
+  require('./offline/page6.json'),
+  require('./offline/page7.json'),
+  require('./offline/page8.json'),
+  require('./offline/page9.json'),
+  require('./offline/page10.json'),
+  require('./offline/page11.json'),
+  require('./offline/page12.json'),
+  require('./offline/page13.json'),
+];
+
 class Issue extends Component {
   render() {
     return (
-      <View>
+      <View style={styles.issue}>
         <Text style={styles.body}>{this.props.item.title}</Text>
         {this.props.item.labels.map(label => {
           return (
@@ -101,31 +117,55 @@ class GitHubQuery extends Component {
 
   async queryIssues(pageNumber) {
     return new Promise((resolve, reject) => {
-      console.log(`Querying for ${pageNumber}`);
-      let request = new XMLHttpRequest();
-      request.onload = () => {
-        this.processIssues(JSON.parse(request.responseText));
-        resolve();
-      };
-      request.onerror = () => {
-        console.log('Error!');
-        reject();
-      };
-      request.open(
-        'get',
-        `https://api.github.com/repos/microsoft/react-native-windows/issues?state=open&sort=updated&direction=desc&page=${pageNumber}`,
-        true,
-      );
-      request.setRequestHeader('User-Agent', 'whatever');
-      request.send();
+      let uri = `https://api.github.com/repos/microsoft/react-native-windows/issues?state=open&sort=updated&direction=desc&page=${pageNumber}`;
+      console.log(`Querying for ${pageNumber}: ${uri}`);
+      
+      // Use offline data versus online data while this is under active development
+      // TODO: Enable a switch, or a cache so this happens naturally
+      let useOfflineData = true;
+      if (useOfflineData) {
+        let pageData = offlineData[pageNumber - 1];
+        resolve(pageData);
+      } else {
+        let request = new XMLHttpRequest();
+        request.onload = () => {
+          let pageData = JSON.parse(request.responseText);
+          resolve(pageData);
+        };
+        request.onerror = () => {
+          console.log('Error!');
+          reject();
+        };
+        request.open(
+          'get',
+          uri,
+          true,
+        );
+        request.setRequestHeader('User-Agent', 'whatever');
+        request.send();
+      }
     });
   }
 
   async queryAllIssues() {
     this.issuesByAssignee = {};
-    await this.queryIssues(1);
-    await this.queryIssues(2);
-    await this.queryIssues(3);
+    let pageNumber = 1;
+    while (true) {
+      console.log(`Try page ${pageNumber}`);
+      let pageData = undefined;
+      try {
+        pageData = await this.queryIssues(pageNumber);
+      } catch {
+        console.log('Error getting page');
+        break;
+      }
+      if (pageData === undefined || pageData.length === 0) {
+        console.log('End of pages');
+        break;
+      }
+      this.processIssues(pageData);
+      pageNumber = pageNumber + 1;
+    }
     console.log('Set state');
     this.setState({
       issuesByAssignee: this.issuesByAssignee,
@@ -237,6 +277,9 @@ const styles = StyleSheet.create({
     paddingRight: 12,
     textAlign: 'right',
   },
+  issue: {
+    flexDirection: 'row',
+  }
 });
 
 export default App;
