@@ -45,10 +45,13 @@ class Issue extends Component {
     return (
       <View style={styles.issue}>
         <Text style={styles.issueTitle}>{this.props.item.title}</Text>
+        <View style={styles.milestone}>
+          <Text style={styles.milestoneText}>{this.props.item.milestone}</Text>
+        </View>
         {this.props.item.labels.map(label => {
           return (
             <View key={label.name} style={{backgroundColor: '#' + label.color, ...styles.label}}>
-              <Text>{label.name}</Text>
+              <Text style={styles.labelText}>{label.name}</Text>
             </View>
           );
         })}
@@ -61,7 +64,7 @@ class IssueList extends Component {
   render() {
     return (
       <View>
-        <Text style={styles.assignee}>{this.props.assignee}</Text>
+        <Text style={styles.assignee}>{this.props.assignee} ({this.props.list.length})</Text>
         {this.props.list.map(item => (
           <Issue key={item.id} item={item} />
         ))}
@@ -84,6 +87,10 @@ class GitHubQuery extends Component {
     if (issueAssignee) {
       assignee = issueAssignee.login;
     }
+    let milestone = 'unscheduled';
+    if (issue.milestone) {
+      milestone = issue.milestone.title;
+    }
     return {
       id: issue.id,
       title: issue.title,
@@ -95,14 +102,11 @@ class GitHubQuery extends Component {
           color: value.color,
         };
       }),
+      milestone: milestone,
     };
   }
 
   processIssues(listOfIssues) {
-    for (let i = 0; i < listOfIssues.length; i++) {
-      console.log(listOfIssues[i].title);
-    }
-
     this.issuesByAssignee = listOfIssues.reduce((accumulator, current) => {
       let issue = this.processIssue(current);
       if (accumulator[issue.assignee] === undefined) {
@@ -111,8 +115,6 @@ class GitHubQuery extends Component {
       accumulator[issue.assignee].push(issue);
       return accumulator;
     }, this.issuesByAssignee);
-
-    console.log(this.issuesByAssignee);
   }
 
   async queryIssues(pageNumber) {
@@ -225,6 +227,19 @@ const styles = StyleSheet.create({
     paddingLeft: 4,
     paddingRight: 4,
     marginLeft: 4,
+  },
+  labelText: {
+
+  },
+  milestone: {
+    backgroundColor: '#888',
+    paddingLeft: 4,
+    paddingRight: 4,
+    marginLeft: 4,
+  },
+  milestoneText: {
+    backgroundColor: Colors.black,
+    color: Colors.white,
   }
 });
 
