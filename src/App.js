@@ -14,6 +14,7 @@ import {
   View,
   Text,
   StatusBar,
+  TouchableWithoutFeedback,
 } from 'react-native';
 
 import {
@@ -61,13 +62,25 @@ class Issue extends Component {
 }
 
 class IssueList extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      collapsed: props.assignee === 'unassigned',
+    }
+  }
   render() {
     return (
       <View>
-        <Text style={styles.assignee}>{this.props.assignee} ({this.props.list.length})</Text>
-        {this.props.list.map(item => (
-          <Issue key={item.id} item={item} />
-        ))}
+        <TouchableWithoutFeedback onPress={() => {this.setState({collapsed: !this.state.collapsed})}}>
+          <Text style={styles.assignee}>{this.props.assignee} ({this.props.list.length})</Text>
+        </TouchableWithoutFeedback>
+        {(!this.state.collapsed) &&
+          <View>
+            {this.props.list.map(item => (
+              <Issue key={item.id} item={item} />
+            ))}
+          </View>
+        }
       </View>
     );
   }
@@ -152,6 +165,12 @@ class GitHubQuery extends Component {
   async queryAllIssues() {
     this.issuesByAssignee = {};
     let pageNumber = 1;
+
+    this.setState({
+      issuesByAssignee: [],
+      progress: 0.0,
+    });
+
     while (pageNumber > 0) {
       console.log(`Try page ${pageNumber}`);
       let pageData = undefined;
@@ -167,10 +186,16 @@ class GitHubQuery extends Component {
       }
       this.processIssues(pageData);
       pageNumber = pageNumber + 1;
+
+      // TODO: Get expected number of pages so we can calcualte percentage
+      this.setState({
+        issuesByAssignee: this.issuesByAssignee,
+        progress: 0.5,
+      });
     }
-    console.log('Set state');
+
     this.setState({
-      issuesByAssignee: this.issuesByAssignee,
+      progress: 1.0,
     });
   }
 
@@ -181,6 +206,9 @@ class GitHubQuery extends Component {
   render() {
     return (
       <>
+        {(this.state.progress < 1.0) &&
+          <Text>Loading {this.state.progress}</Text>
+        }
         {Object.keys(this.state.issuesByAssignee).map(assignee => (
           <IssueList
             key={assignee}
