@@ -15,14 +15,11 @@ import {
   Text,
   StatusBar,
   TouchableWithoutFeedback,
+  Linking,
 } from 'react-native';
 
 import {
-  Header,
-  LearnMoreLinks,
   Colors,
-  DebugInstructions,
-  ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
 
 const offlineData = [
@@ -50,7 +47,7 @@ class Label extends Component {
     let yiq = ((r*299)+(g*587)+(b*114))/1000;
     return (yiq >= 128) ? 'black' : 'white';
   }
-  
+
   render() {
     return (
       <View style={{backgroundColor: '#' + this.props.color, ...styles.label}}>
@@ -64,7 +61,9 @@ class Issue extends Component {
   render() {
     return (
       <View style={styles.issue}>
-        <Text style={styles.issueTitle}>{this.props.item.title}</Text>
+        <TouchableWithoutFeedback onPress={() => {Linking.openURL(this.props.item.url)}}>
+          <Text style={styles.issueTitle}>{this.props.item.title}</Text>
+        </TouchableWithoutFeedback>
         <View style={styles.milestone}>
           <Text style={styles.milestoneText}>{this.props.item.milestone}</Text>
         </View>
@@ -160,6 +159,7 @@ class GitHubQuery extends Component {
     }
     return {
       id: issue.id,
+      url: issue.url,
       title: issue.title,
       assignee: assignee,
       url: issue.html_url,
