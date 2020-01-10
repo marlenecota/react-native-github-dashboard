@@ -106,14 +106,18 @@ class AssigneeList extends Component {
   }
 
   render() {
-    return (
-      Object.keys(this.props.issuesByAssignee).map(assignee => (
-        <IssueList
-          key={assignee}
-          assignee={assignee}
-          list={this.props.issuesByAssignee[assignee]}
-        />
-      )));
+    let assignees = Object.keys(this.props.issuesByAssignee).sort((a,b) => {
+      let issuesA = this.props.issuesByAssignee[a];
+      let issuesB = this.props.issuesByAssignee[b];
+      return issuesB.length - issuesA.length;
+    });
+    return assignees.map(assignee => (
+      <IssueList
+        key={assignee}
+        assignee={assignee}
+        list={this.props.issuesByAssignee[assignee]}
+      />
+    ));
   }
 }
 
