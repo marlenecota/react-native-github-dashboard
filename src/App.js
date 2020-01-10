@@ -65,9 +65,6 @@ class Issue extends Component {
         <TouchableWithoutFeedback onPress={() => {Linking.openURL(this.props.item.url)}}>
           <Text style={styles.issueTitle}>{this.props.item.title}</Text>
         </TouchableWithoutFeedback>
-        <View style={styles.milestone}>
-          <Text style={styles.milestoneText}>{this.props.item.milestone}</Text>
-        </View>
         {this.props.item.labels.map(label => {
           return (
             <Label key={label.name} name={label.name} color={label.color}/>
@@ -335,16 +332,6 @@ const styles = StyleSheet.create({
   labelText: {
 
   },
-  milestone: {
-    backgroundColor: '#888',
-    paddingLeft: 4,
-    paddingRight: 4,
-    marginLeft: 4,
-  },
-  milestoneText: {
-    backgroundColor: Colors.black,
-    color: Colors.white,
-  }
 });
 
 export default App;
