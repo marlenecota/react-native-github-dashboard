@@ -15,14 +15,12 @@ import {
   Text,
   StatusBar,
   TouchableWithoutFeedback,
+  Linking,
+  SectionList,
 } from 'react-native';
 
 import {
-  Header,
-  LearnMoreLinks,
   Colors,
-  DebugInstructions,
-  ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
 
 const offlineData = [
@@ -50,7 +48,7 @@ class Label extends Component {
     let yiq = ((r*299)+(g*587)+(b*114))/1000;
     return (yiq >= 128) ? 'black' : 'white';
   }
-  
+
   render() {
     return (
       <View style={{backgroundColor: '#' + this.props.color, ...styles.label}}>
@@ -64,10 +62,9 @@ class Issue extends Component {
   render() {
     return (
       <View style={styles.issue}>
-        <Text style={styles.issueTitle}>{this.props.item.title}</Text>
-        <View style={styles.milestone}>
-          <Text style={styles.milestoneText}>{this.props.item.milestone}</Text>
-        </View>
+        <TouchableWithoutFeedback onPress={() => {Linking.openURL(this.props.item.url)}}>
+          <Text style={styles.issueTitle}>{this.props.item.title}</Text>
+        </TouchableWithoutFeedback>
         {this.props.item.labels.map(label => {
           return (
             <Label key={label.name} name={label.name} color={label.color}/>
@@ -100,15 +97,37 @@ class IssueList extends Component {
   }
 
   render() {
+    let sectionsMap = this.props.list.reduce((groupedByMilestone, issue) => {
+      if (groupedByMilestone[issue.milestone] === undefined) {
+        groupedByMilestone[issue.milestone] = {
+          milestone: issue.milestone,
+          dueDate: issue.dueDate,
+          data: [],
+        };
+      }
+      groupedByMilestone[issue.milestone].data.push(issue);
+      return groupedByMilestone;
+    }, {});
+
+    let sections = Object.keys(sectionsMap).map((section) => sectionsMap[section]);
+    let sortedSections = sections.sort((a,b) => {
+      let dateCompare = a.dueDate - b.dueDate;
+      if (dateCompare !== 0) {
+        return dateCompare;
+      }
+      return a.milestone.localeCompare(b.milestone);
+    });
+    
     return (
       <View>
         <TouchableWithoutFeedback onPress={() => {this.setState({collapsed: !this.state.collapsed})}}>
           <Text style={styles.assignee}>{this.props.assignee} ({this.props.list.length})</Text>
         </TouchableWithoutFeedback>
-        {(!this.state.collapsed) &&
-          <View>
-            {this.sortAndMapIssues()}
-          </View>
+        {!this.state.collapsed && 
+        <SectionList
+          sections={sortedSections}
+          renderSectionHeader={({section}) => <Text style={styles.milestoneSectionHeader}>{section.milestone}</Text>}
+          renderItem={({item}) => <Issue key={item.id} item={item}/>}/>
         }
       </View>
     );
@@ -160,6 +179,7 @@ class GitHubQuery extends Component {
     }
     return {
       id: issue.id,
+      url: issue.url,
       title: issue.title,
       assignee: assignee,
       url: issue.html_url,
@@ -297,6 +317,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: Colors.black,
   },
+  milestoneSectionHeader: {
+    fontWeight: '600',
+    color: Colors.black,
+  },
   issue: {
     flexDirection: 'row',
   },
@@ -308,16 +332,6 @@ const styles = StyleSheet.create({
   labelText: {
 
   },
-  milestone: {
-    backgroundColor: '#888',
-    paddingLeft: 4,
-    paddingRight: 4,
-    marginLeft: 4,
-  },
-  milestoneText: {
-    backgroundColor: Colors.black,
-    color: Colors.white,
-  }
 });
 
 export default App;
