@@ -68,6 +68,20 @@ class IssueList extends Component {
       collapsed: props.assignee === 'unassigned',
     }
   }
+
+  sortAndMapIssues() {
+    let sorted = this.props.list.sort((a,b) => {
+      let dateCompare = a.dueDate - b.dueDate;
+      if (dateCompare !== 0) {
+        return dateCompare;
+      }
+      return a.title.localeCompare(b.title);
+    });
+    return sorted.map(item => (
+      <Issue key={item.id} item={item} />
+    ));
+  }
+
   render() {
     return (
       <View>
@@ -76,9 +90,7 @@ class IssueList extends Component {
         </TouchableWithoutFeedback>
         {(!this.state.collapsed) &&
           <View>
-            {this.props.list.map(item => (
-              <Issue key={item.id} item={item} />
-            ))}
+            {this.sortAndMapIssues()}
           </View>
         }
       </View>
@@ -101,8 +113,10 @@ class GitHubQuery extends Component {
       assignee = issueAssignee.login;
     }
     let milestone = 'unscheduled';
+    let dueDate = new Date(8640000000000000);
     if (issue.milestone) {
       milestone = issue.milestone.title;
+      dueDate = new Date(issue.milestone.due_on);
     }
     return {
       id: issue.id,
@@ -116,6 +130,7 @@ class GitHubQuery extends Component {
         };
       }),
       milestone: milestone,
+      dueDate: dueDate,
     };
   }
 
