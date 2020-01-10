@@ -41,6 +41,25 @@ const offlineData = [
   require('./offline/page13.json'),
 ];
 
+class Label extends Component {
+  getContrastYIQ(hexcolor) {
+    hexcolor = hexcolor.replace('#', '');
+    let r = parseInt(hexcolor.substr(0,2),16);
+    let g = parseInt(hexcolor.substr(2,2),16);
+    let b = parseInt(hexcolor.substr(4,2),16);
+    let yiq = ((r*299)+(g*587)+(b*114))/1000;
+    return (yiq >= 128) ? 'black' : 'white';
+  }
+  
+  render() {
+    return (
+      <View style={{backgroundColor: '#' + this.props.color, ...styles.label}}>
+        <Text style={{color: this.getContrastYIQ(this.props.color), ...styles.labelText}}>{this.props.name}</Text>
+      </View>
+    );
+  }
+}
+
 class Issue extends Component {
   render() {
     return (
@@ -51,9 +70,7 @@ class Issue extends Component {
         </View>
         {this.props.item.labels.map(label => {
           return (
-            <View key={label.name} style={{backgroundColor: '#' + label.color, ...styles.label}}>
-              <Text style={styles.labelText}>{label.name}</Text>
-            </View>
+            <Label key={label.name} name={label.name} color={label.color}/>
           );
         })}
       </View>
