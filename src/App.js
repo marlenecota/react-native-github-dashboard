@@ -14,6 +14,7 @@ import {
   View,
   Text,
   StatusBar,
+  TouchableWithoutFeedback,
 } from 'react-native';
 
 import {
@@ -24,16 +25,52 @@ import {
   ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
 
+const offlineData = [
+  require('./offline/page1.json'),
+  require('./offline/page2.json'),
+  require('./offline/page3.json'),
+  require('./offline/page4.json'),
+  require('./offline/page5.json'),
+  require('./offline/page6.json'),
+  require('./offline/page7.json'),
+  require('./offline/page8.json'),
+  require('./offline/page9.json'),
+  require('./offline/page10.json'),
+  require('./offline/page11.json'),
+  require('./offline/page12.json'),
+  require('./offline/page13.json'),
+];
+
+class Label extends Component {
+  getContrastYIQ(hexcolor) {
+    hexcolor = hexcolor.replace('#', '');
+    let r = parseInt(hexcolor.substr(0,2),16);
+    let g = parseInt(hexcolor.substr(2,2),16);
+    let b = parseInt(hexcolor.substr(4,2),16);
+    let yiq = ((r*299)+(g*587)+(b*114))/1000;
+    return (yiq >= 128) ? 'black' : 'white';
+  }
+  
+  render() {
+    return (
+      <View style={{backgroundColor: '#' + this.props.color, ...styles.label}}>
+        <Text style={{color: this.getContrastYIQ(this.props.color), ...styles.labelText}}>{this.props.name}</Text>
+      </View>
+    );
+  }
+}
+
 class Issue extends Component {
   render() {
     return (
-      <View>
-        <Text style={styles.body}>{this.props.item.title}</Text>
+      <View style={styles.issue}>
+        <Text style={styles.issueTitle}>{this.props.item.title}</Text>
+        <View style={styles.milestone}>
+          <Text style={styles.milestoneText}>{this.props.item.milestone}</Text>
+        </View>
         {this.props.item.labels.map(label => {
           return (
-            <View key={label.name} style={{backgroundColor: '#' + label.color}}>
-              <Text>{label.name}</Text>
-            </View>
+            <Label key={label.name} name={label.name} color={label.color}/>
           );
         })}
       </View>
@@ -42,15 +79,62 @@ class Issue extends Component {
 }
 
 class IssueList extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      collapsed: props.assignee === 'unassigned',
+    }
+  }
+
+  sortAndMapIssues() {
+    let sorted = this.props.list.sort((a,b) => {
+      let dateCompare = a.dueDate - b.dueDate;
+      if (dateCompare !== 0) {
+        return dateCompare;
+      }
+      return a.title.localeCompare(b.title);
+    });
+    return sorted.map(item => (
+      <Issue key={item.id} item={item} />
+    ));
+  }
+
   render() {
     return (
       <View>
-        <Text style={styles.sectionTitle}>{this.props.assignee}</Text>
-        {this.props.list.map(item => (
-          <Issue key={item.id} item={item} />
-        ))}
+        <TouchableWithoutFeedback onPress={() => {this.setState({collapsed: !this.state.collapsed})}}>
+          <Text style={styles.assignee}>{this.props.assignee} ({this.props.list.length})</Text>
+        </TouchableWithoutFeedback>
+        {(!this.state.collapsed) &&
+          <View>
+            {this.sortAndMapIssues()}
+          </View>
+        }
       </View>
     );
+  }
+}
+
+class AssigneeList extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+    };
+  }
+
+  render() {
+    let assignees = Object.keys(this.props.issuesByAssignee).sort((a,b) => {
+      let issuesA = this.props.issuesByAssignee[a];
+      let issuesB = this.props.issuesByAssignee[b];
+      return issuesB.length - issuesA.length;
+    });
+    return assignees.map(assignee => (
+      <IssueList
+        key={assignee}
+        assignee={assignee}
+        list={this.props.issuesByAssignee[assignee]}
+      />
+    ));
   }
 }
 
@@ -68,6 +152,12 @@ class GitHubQuery extends Component {
     if (issueAssignee) {
       assignee = issueAssignee.login;
     }
+    let milestone = 'unscheduled';
+    let dueDate = new Date(8640000000000000);
+    if (issue.milestone) {
+      milestone = issue.milestone.title;
+      dueDate = new Date(issue.milestone.due_on);
+    }
     return {
       id: issue.id,
       title: issue.title,
@@ -79,14 +169,12 @@ class GitHubQuery extends Component {
           color: value.color,
         };
       }),
+      milestone: milestone,
+      dueDate: dueDate,
     };
   }
 
   processIssues(listOfIssues) {
-    for (let i = 0; i < listOfIssues.length; i++) {
-      console.log(listOfIssues[i].title);
-    }
-
     this.issuesByAssignee = listOfIssues.reduce((accumulator, current) => {
       let issue = this.processIssue(current);
       if (accumulator[issue.assignee] === undefined) {
@@ -95,40 +183,74 @@ class GitHubQuery extends Component {
       accumulator[issue.assignee].push(issue);
       return accumulator;
     }, this.issuesByAssignee);
-
-    console.log(this.issuesByAssignee);
   }
 
   async queryIssues(pageNumber) {
     return new Promise((resolve, reject) => {
-      console.log(`Querying for ${pageNumber}`);
-      let request = new XMLHttpRequest();
-      request.onload = () => {
-        this.processIssues(JSON.parse(request.responseText));
-        resolve();
-      };
-      request.onerror = () => {
-        console.log('Error!');
-        reject();
-      };
-      request.open(
-        'get',
-        `https://api.github.com/repos/microsoft/react-native-windows/issues?state=open&sort=updated&direction=desc&page=${pageNumber}`,
-        true,
-      );
-      request.setRequestHeader('User-Agent', 'whatever');
-      request.send();
+      let uri = `https://api.github.com/repos/microsoft/react-native-windows/issues?state=open&sort=updated&direction=desc&page=${pageNumber}`;
+      console.log(`Querying for ${pageNumber}: ${uri}`);
+      
+      // Use offline data versus online data while this is under active development
+      // TODO: Enable a switch, or a cache so this happens naturally
+      let useOfflineData = true;
+      if (useOfflineData) {
+        let pageData = offlineData[pageNumber - 1];
+        resolve(pageData);
+      } else {
+        let request = new XMLHttpRequest();
+        request.onload = () => {
+          let pageData = JSON.parse(request.responseText);
+          resolve(pageData);
+        };
+        request.onerror = () => {
+          console.log('Error!');
+          reject();
+        };
+        request.open(
+          'get',
+          uri,
+          true,
+        );
+        request.setRequestHeader('User-Agent', 'whatever');
+        request.send();
+      }
     });
   }
 
   async queryAllIssues() {
     this.issuesByAssignee = {};
-    await this.queryIssues(1);
-    await this.queryIssues(2);
-    await this.queryIssues(3);
-    console.log('Set state');
+    let pageNumber = 1;
+
     this.setState({
-      issuesByAssignee: this.issuesByAssignee,
+      issuesByAssignee: [],
+      progress: 0.0,
+    });
+
+    while (pageNumber > 0) {
+      console.log(`Try page ${pageNumber}`);
+      let pageData = undefined;
+      try {
+        pageData = await this.queryIssues(pageNumber);
+      } catch {
+        console.log('Error getting page');
+        break;
+      }
+      if (pageData === undefined || pageData.length === 0) {
+        console.log('End of pages');
+        break;
+      }
+      this.processIssues(pageData);
+      pageNumber = pageNumber + 1;
+
+      // TODO: Get expected number of pages so we can calcualte percentage
+      this.setState({
+        issuesByAssignee: this.issuesByAssignee,
+        progress: 0.5,
+      });
+    }
+
+    this.setState({
+      progress: 1.0,
     });
   }
 
@@ -139,13 +261,10 @@ class GitHubQuery extends Component {
   render() {
     return (
       <>
-        {Object.keys(this.state.issuesByAssignee).map(assignee => (
-          <IssueList
-            key={assignee}
-            assignee={assignee}
-            list={this.state.issuesByAssignee[assignee]}
-          />
-        ))}
+        {(this.state.progress < 1.0) &&
+          <Text>Loading {this.state.progress}</Text>
+        }
+        <AssigneeList issuesByAssignee={this.state.issuesByAssignee}/>
       </>
     );
   }
@@ -160,40 +279,6 @@ const App = () => {
           contentInsetAdjustmentBehavior="automatic"
           style={styles.scrollView}>
           <GitHubQuery/>
-          <Header />
-          {global.HermesInternal == null ? null : (
-            <View style={styles.engine}>
-              <Text style={styles.footer}>Engine: Hermes</Text>
-            </View>
-          )}
-          <View style={styles.body}>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Step One</Text>
-              <Text style={styles.sectionDescription}>
-                Edit <Text style={styles.highlight}>App.js</Text> to change this
-                screen and then come back to see your edits.
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>See Your Changes</Text>
-              <Text style={styles.sectionDescription}>
-                <ReloadInstructions />
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Debug</Text>
-              <Text style={styles.sectionDescription}>
-                <DebugInstructions />
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Learn More</Text>
-              <Text style={styles.sectionDescription}>
-                Read the docs to discover what to do next:
-              </Text>
-            </View>
-            <LearnMoreLinks />
-          </View>
         </ScrollView>
       </SafeAreaView>
     </Fragment>
@@ -204,39 +289,35 @@ const styles = StyleSheet.create({
   scrollView: {
     backgroundColor: Colors.lighter,
   },
-  engine: {
-    position: 'absolute',
-    right: 0,
-  },
-  body: {
+  issueTitle: {
     backgroundColor: Colors.white,
   },
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
+  assignee: {
     fontSize: 24,
     fontWeight: '600',
     color: Colors.black,
   },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-    color: Colors.dark,
+  issue: {
+    flexDirection: 'row',
   },
-  highlight: {
-    fontWeight: '700',
+  label: {
+    paddingLeft: 4,
+    paddingRight: 4,
+    marginLeft: 4,
   },
-  footer: {
-    color: Colors.dark,
-    fontSize: 12,
-    fontWeight: '600',
-    padding: 4,
-    paddingRight: 12,
-    textAlign: 'right',
+  labelText: {
+
   },
+  milestone: {
+    backgroundColor: '#888',
+    paddingLeft: 4,
+    paddingRight: 4,
+    marginLeft: 4,
+  },
+  milestoneText: {
+    backgroundColor: Colors.black,
+    color: Colors.white,
+  }
 });
 
 export default App;
