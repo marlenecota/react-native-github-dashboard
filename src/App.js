@@ -98,6 +98,25 @@ class IssueList extends Component {
   }
 }
 
+class AssigneeList extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+    };
+  }
+
+  render() {
+    return (
+      Object.keys(this.props.issuesByAssignee).map(assignee => (
+        <IssueList
+          key={assignee}
+          assignee={assignee}
+          list={this.props.issuesByAssignee[assignee]}
+        />
+      )));
+  }
+}
+
 class GitHubQuery extends Component {
   constructor(props) {
     super(props);
@@ -224,13 +243,7 @@ class GitHubQuery extends Component {
         {(this.state.progress < 1.0) &&
           <Text>Loading {this.state.progress}</Text>
         }
-        {Object.keys(this.state.issuesByAssignee).map(assignee => (
-          <IssueList
-            key={assignee}
-            assignee={assignee}
-            list={this.state.issuesByAssignee[assignee]}
-          />
-        ))}
+        <AssigneeList issuesByAssignee={this.state.issuesByAssignee}/>
       </>
     );
   }
