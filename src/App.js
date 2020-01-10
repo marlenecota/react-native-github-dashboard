@@ -16,6 +16,7 @@ import {
   StatusBar,
   TouchableWithoutFeedback,
   Linking,
+  SectionList,
 } from 'react-native';
 
 import {
@@ -99,15 +100,37 @@ class IssueList extends Component {
   }
 
   render() {
+    let sectionsMap = this.props.list.reduce((groupedByMilestone, issue) => {
+      if (groupedByMilestone[issue.milestone] === undefined) {
+        groupedByMilestone[issue.milestone] = {
+          milestone: issue.milestone,
+          dueDate: issue.dueDate,
+          data: [],
+        };
+      }
+      groupedByMilestone[issue.milestone].data.push(issue);
+      return groupedByMilestone;
+    }, {});
+
+    let sections = Object.keys(sectionsMap).map((section) => sectionsMap[section]);
+    let sortedSections = sections.sort((a,b) => {
+      let dateCompare = a.dueDate - b.dueDate;
+      if (dateCompare !== 0) {
+        return dateCompare;
+      }
+      return a.milestone.localeCompare(b.milestone);
+    });
+    
     return (
       <View>
         <TouchableWithoutFeedback onPress={() => {this.setState({collapsed: !this.state.collapsed})}}>
           <Text style={styles.assignee}>{this.props.assignee} ({this.props.list.length})</Text>
         </TouchableWithoutFeedback>
-        {(!this.state.collapsed) &&
-          <View>
-            {this.sortAndMapIssues()}
-          </View>
+        {!this.state.collapsed && 
+        <SectionList
+          sections={sortedSections}
+          renderSectionHeader={({section}) => <Text style={styles.milestoneSectionHeader}>{section.milestone}</Text>}
+          renderItem={({item}) => <Issue key={item.id} item={item}/>}/>
         }
       </View>
     );
@@ -294,6 +317,10 @@ const styles = StyleSheet.create({
   },
   assignee: {
     fontSize: 24,
+    fontWeight: '600',
+    color: Colors.black,
+  },
+  milestoneSectionHeader: {
     fontWeight: '600',
     color: Colors.black,
   },
