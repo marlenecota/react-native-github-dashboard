@@ -83,19 +83,6 @@ class IssueList extends Component {
     }
   }
 
-  sortAndMapIssues() {
-    let sorted = this.props.list.sort((a,b) => {
-      let dateCompare = a.dueDate - b.dueDate;
-      if (dateCompare !== 0) {
-        return dateCompare;
-      }
-      return a.title.localeCompare(b.title);
-    });
-    return sorted.map(item => (
-      <Issue key={item.id} item={item} />
-    ));
-  }
-
   render() {
     let sectionsMap = this.props.list.reduce((groupedByMilestone, issue) => {
       if (groupedByMilestone[issue.milestone] === undefined) {
@@ -109,7 +96,7 @@ class IssueList extends Component {
       return groupedByMilestone;
     }, {});
 
-    let sections = Object.keys(sectionsMap).map((section) => sectionsMap[section]);
+    let sections = Object.keys(sectionsMap).map(section => sectionsMap[section]);
     let sortedSections = sections.sort((a,b) => {
       let dateCompare = a.dueDate - b.dueDate;
       if (dateCompare !== 0) {
@@ -135,12 +122,6 @@ class IssueList extends Component {
 }
 
 class AssigneeList extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-    };
-  }
-
   render() {
     let assignees = Object.keys(this.props.issuesByAssignee).sort((a,b) => {
       let issuesA = this.props.issuesByAssignee[a];
@@ -195,13 +176,13 @@ class GitHubQuery extends Component {
   }
 
   processIssues(listOfIssues) {
-    this.issuesByAssignee = listOfIssues.reduce((accumulator, current) => {
+    this.issuesByAssignee = listOfIssues.reduce((issuesByAssignee, current) => {
       let issue = this.processIssue(current);
-      if (accumulator[issue.assignee] === undefined) {
-        accumulator[issue.assignee] = [];
+      if (issuesByAssignee[issue.assignee] === undefined) {
+        issuesByAssignee[issue.assignee] = [];
       }
-      accumulator[issue.assignee].push(issue);
-      return accumulator;
+      issuesByAssignee[issue.assignee].push(issue);
+      return issuesByAssignee;
     }, this.issuesByAssignee);
   }
 
@@ -252,11 +233,11 @@ class GitHubQuery extends Component {
       try {
         pageData = await this.queryIssues(pageNumber);
       } catch {
-        console.log('Error getting page');
+        console.log(`Error getting ${pageNumber}`);
         break;
       }
       if (pageData === undefined || pageData.length === 0) {
-        console.log('End of pages');
+        console.log(`End of pages (no ${pageNumber})`);
         break;
       }
       this.processIssues(pageData);
