@@ -51,9 +51,16 @@ class Label extends Component {
 
   render() {
     return (
-      <View style={{backgroundColor: '#' + this.props.color, ...styles.label}}>
-        <Text style={{color: this.getContrastYIQ(this.props.color), ...styles.labelText}}>{this.props.name}</Text>
-      </View>
+      <TouchableWithoutFeedback
+        onPress={() => {
+          if (this.props.onPress) {
+            this.props.onPress(this.props.label);
+          }
+        }}>
+        <View style={{backgroundColor: '#' + this.props.label.color, ...styles.label}}>
+          <Text style={{color: this.getContrastYIQ(this.props.label.color), ...styles.labelText}}>{this.props.label.name}</Text>
+        </View>
+      </TouchableWithoutFeedback>
     );
   }
 }
@@ -66,7 +73,7 @@ class Issue extends Component {
           <Text style={styles.issueTitle}>{this.props.item.title}</Text>
         </TouchableWithoutFeedback>
         {this.props.item.labels.map(label => (
-            <Label key={label.id} name={label.name} color={label.color}/>
+          <Label key={label.id} label={label}/>
         ))}
       </View>
     );
@@ -158,7 +165,9 @@ class LabelList extends Component {
     return (
       <View style={styles.labelList}>
         {labels.map(label => (
-          <Label key={label.id} name={label.name} color={label.color}/>
+          <Label key={label.id} label={label} onPress={(label) => {
+            console.log(label);
+          }}/>
         ))}
       </View>
     )
@@ -169,6 +178,7 @@ class GitHubQuery extends Component {
   constructor(props) {
     super(props);
     this.state = {
+      useOfflineData: true,
       issuesByAssignee: {},
       milestonesById: {},
       labelsById: {},
@@ -250,8 +260,7 @@ class GitHubQuery extends Component {
       
       // Use offline data versus online data while this is under active development
       // TODO: Enable a switch, or a cache so this happens naturally
-      let useOfflineData = true;
-      if (useOfflineData) {
+      if (this.state.useOfflineData) {
         let pageData = offlineData[pageNumber - 1];
         resolve(pageData);
       } else {
