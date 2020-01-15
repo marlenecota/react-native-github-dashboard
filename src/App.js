@@ -141,9 +141,10 @@ class AssigneeList extends Component {
 
 class MilestoneList extends Component {
   render() {
+    let milestones = Object.values(this.props.milestonesById).sort((a,b) => (b.count - a.count));
     return (
       <View style={styles.milestoneList}>
-        {Object.values(this.props.milestonesById).map(milestone => (
+        {milestones.map(milestone => (
           <Text key={milestone.id}>{milestone.title}</Text>
         ))}
       </View>
@@ -153,9 +154,10 @@ class MilestoneList extends Component {
 
 class LabelList extends Component {
   render() {
+    let labels = Object.values(this.props.labelsById).sort((a,b) => (b.count - a.count));
     return (
       <View style={styles.labelList}>
-        {Object.values(this.props.labelsById).map(label => (
+        {labels.map(label => (
           <Label key={label.id} name={label.name} color={label.color}/>
         ))}
       </View>
@@ -173,10 +175,14 @@ class GitHubQuery extends Component {
     };
   }
 
-  setById(collection, id, item) {
+  countById(collection, item) {
+    let id = item.id;
     let existing = collection[id];
     if (!existing) {
-      collection[id] = item;
+      existing = collection[id] = item;
+      existing.count = 1;
+    } else {
+      existing.count += 1;
     }
   }
   addById(collection, id, item) {
@@ -228,11 +234,11 @@ class GitHubQuery extends Component {
       this.addById(this.issuesByAssignee, issue.assignee, issue);
 
       issue.labels.forEach(label => {
-        this.setById(this.labelsById, label.id, label);
+        this.countById(this.labelsById, label);
       });
 
       if (issue.milestone.id) {
-        this.setById(this.milestonesById, issue.milestone.id, issue.milestone);
+        this.countById(this.milestonesById, issue.milestone);
       }
     });
   }
