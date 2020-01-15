@@ -65,11 +65,9 @@ class Issue extends Component {
         <TouchableWithoutFeedback onPress={() => {Linking.openURL(this.props.item.url)}}>
           <Text style={styles.issueTitle}>{this.props.item.title}</Text>
         </TouchableWithoutFeedback>
-        {this.props.item.labels.map(label => {
-          return (
-            <Label key={label.name} name={label.name} color={label.color}/>
-          );
-        })}
+        {this.props.item.labels.map(label => (
+            <Label key={label.id} name={label.name} color={label.color}/>
+        ))}
       </View>
     );
   }
@@ -141,14 +139,25 @@ class AssigneeList extends Component {
   }
 }
 
+class MilestoneList extends Component {
+  render() {
+    return (
+      <View>
+        {Object.values(this.props.milestonesById).map(milestone => (
+          <Text key={milestone.id}>{milestone.title}</Text>
+        ))}
+      </View>
+    )
+  }
+}
+
 class GitHubQuery extends Component {
   constructor(props) {
     super(props);
     this.state = {
       issuesByAssignee: {},
+      milestonesById: {},
     };
-    this.milestonesById = {};
-    this.labelsById = {};
   }
 
   setById(collection, id, item) {
@@ -206,12 +215,10 @@ class GitHubQuery extends Component {
       this.addById(this.issuesByAssignee, issue.assignee, issue);
 
       issue.labels.forEach(label => {
-        console.log(label);
         this.setById(this.labelsById, label.id, label);
       });
 
       if (issue.milestone.id) {
-        console.log(issue.milestone);
         this.setById(this.milestonesById, issue.milestone.id, issue.milestone);
       }
     });
@@ -251,10 +258,13 @@ class GitHubQuery extends Component {
 
   async queryAllIssues() {
     this.issuesByAssignee = {};
+    this.milestonesById = {};
+    this.labelsById = {};
     let pageNumber = 1;
 
     this.setState({
-      issuesByAssignee: [],
+      issuesByAssignee: {},
+      milestonesById: {},
       progress: 0.0,
     });
 
@@ -277,6 +287,7 @@ class GitHubQuery extends Component {
       // TODO: Get expected number of pages so we can calculate percentage
       this.setState({
         issuesByAssignee: this.issuesByAssignee,
+        milestonesById: this.milestonesById,
         progress: 0.5,
       });
     }
@@ -296,6 +307,7 @@ class GitHubQuery extends Component {
         {(this.state.progress < 1.0) &&
           <Text>Loading {this.state.progress}</Text>
         }
+        <MilestoneList milestonesById={this.state.milestonesById}/>
         <AssigneeList issuesByAssignee={this.state.issuesByAssignee}/>
       </>
     );
