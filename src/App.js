@@ -85,26 +85,29 @@ class IssueList extends Component {
 
   render() {
     let sectionsMap = this.props.list.reduce((groupedByMilestone, issue) => {
-      if (groupedByMilestone[issue.milestone] === undefined) {
-        groupedByMilestone[issue.milestone] = {
+      let group = groupedByMilestone[issue.milestone.id];
+      if (group === undefined) {
+        group = groupedByMilestone[issue.milestone.id] = {
           milestone: issue.milestone,
-          dueDate: issue.dueDate,
           data: [],
         };
       }
-      groupedByMilestone[issue.milestone].data.push(issue);
+      group.data.push(issue);
       return groupedByMilestone;
     }, {});
 
     let sections = Object.keys(sectionsMap).map(section => sectionsMap[section]);
     let sortedSections = sections.sort((a,b) => {
-      let dateCompare = a.dueDate - b.dueDate;
+      if (a.milestone.id == b.milestone.id) {
+        return 0;
+      }
+      let dateCompare = a.milestone.dueDate - b.milestone.dueDate;
       if (dateCompare !== 0) {
         return dateCompare;
       }
-      return a.milestone.localeCompare(b.milestone);
+      return a.milestone.title.localeCompare(b.milestone.title);
     });
-    
+
     return (
       <View>
         <TouchableWithoutFeedback onPress={() => {this.setState({collapsed: !this.state.collapsed})}}>
@@ -113,7 +116,7 @@ class IssueList extends Component {
         {!this.state.collapsed && 
         <SectionList
           sections={sortedSections}
-          renderSectionHeader={({section}) => <Text style={styles.milestoneSectionHeader}>{section.milestone}</Text>}
+          renderSectionHeader={({section}) => <Text style={styles.milestoneSectionHeader}>{section.milestone.title}</Text>}
           renderItem={({item}) => <Issue key={item.id} item={item}/>}/>
         }
       </View>
@@ -144,6 +147,23 @@ class GitHubQuery extends Component {
     this.state = {
       issuesByAssignee: {},
     };
+    this.milestonesById = {};
+    this.labelsById = {};
+  }
+
+  setById(collection, id, item) {
+    let existing = collection[id];
+    if (!existing) {
+      collection[id] = item;
+    }
+  }
+  addById(collection, id, item) {
+    let existing = collection[id];
+    if (!existing) {
+      collection[id] = [item];
+    } else {
+      existing.push(item);
+    }
   }
 
   processIssue(issue) {
@@ -152,38 +172,49 @@ class GitHubQuery extends Component {
     if (issueAssignee) {
       assignee = issueAssignee.login;
     }
-    let milestone = 'unscheduled';
-    let dueDate = new Date(8640000000000000);
+    let milestone = {};
     if (issue.milestone) {
-      milestone = issue.milestone.title;
-      dueDate = new Date(issue.milestone.due_on);
+      milestone.id = issue.milestone.id;
+      milestone.title = issue.milestone.title;
+      milestone.dueDate = new Date(issue.milestone.due_on);
+    } else {
+      milestone.id = 0;
+      milestone.title = 'unscheduled';
+      milestone.dueDate = new Date(8640000000000000);
     }
+    let labels = issue.labels.map(value => {
+      return {
+        id: value.id,
+        name: value.name,
+        color: value.color,
+      };
+    });
     return {
       id: issue.id,
       url: issue.url,
       title: issue.title,
       assignee: assignee,
       url: issue.html_url,
-      labels: issue.labels.map(value => {
-        return {
-          name: value.name,
-          color: value.color,
-        };
-      }),
-      milestone: milestone,
-      dueDate: dueDate,
+      labels: labels,
+      milestone: milestone
     };
   }
 
   processIssues(listOfIssues) {
-    this.issuesByAssignee = listOfIssues.reduce((issuesByAssignee, current) => {
+    listOfIssues.forEach(current => {
       let issue = this.processIssue(current);
-      if (issuesByAssignee[issue.assignee] === undefined) {
-        issuesByAssignee[issue.assignee] = [];
+      this.addById(this.issuesByAssignee, issue.assignee, issue);
+
+      issue.labels.forEach(label => {
+        console.log(label);
+        this.setById(this.labelsById, label.id, label);
+      });
+
+      if (issue.milestone.id) {
+        console.log(issue.milestone);
+        this.setById(this.milestonesById, issue.milestone.id, issue.milestone);
       }
-      issuesByAssignee[issue.assignee].push(issue);
-      return issuesByAssignee;
-    }, this.issuesByAssignee);
+    });
   }
 
   async queryIssues(pageNumber) {
@@ -243,7 +274,7 @@ class GitHubQuery extends Component {
       this.processIssues(pageData);
       pageNumber = pageNumber + 1;
 
-      // TODO: Get expected number of pages so we can calcualte percentage
+      // TODO: Get expected number of pages so we can calculate percentage
       this.setState({
         issuesByAssignee: this.issuesByAssignee,
         progress: 0.5,
