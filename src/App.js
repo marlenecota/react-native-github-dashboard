@@ -65,11 +65,9 @@ class Issue extends Component {
         <TouchableWithoutFeedback onPress={() => {Linking.openURL(this.props.item.url)}}>
           <Text style={styles.issueTitle}>{this.props.item.title}</Text>
         </TouchableWithoutFeedback>
-        {this.props.item.labels.map(label => {
-          return (
-            <Label key={label.name} name={label.name} color={label.color}/>
-          );
-        })}
+        {this.props.item.labels.map(label => (
+            <Label key={label.id} name={label.name} color={label.color}/>
+        ))}
       </View>
     );
   }
@@ -83,41 +81,31 @@ class IssueList extends Component {
     }
   }
 
-  sortAndMapIssues() {
-    let sorted = this.props.list.sort((a,b) => {
-      let dateCompare = a.dueDate - b.dueDate;
-      if (dateCompare !== 0) {
-        return dateCompare;
-      }
-      return a.title.localeCompare(b.title);
-    });
-    return sorted.map(item => (
-      <Issue key={item.id} item={item} />
-    ));
-  }
-
   render() {
     let sectionsMap = this.props.list.reduce((groupedByMilestone, issue) => {
-      if (groupedByMilestone[issue.milestone] === undefined) {
-        groupedByMilestone[issue.milestone] = {
+      let group = groupedByMilestone[issue.milestone.id];
+      if (group === undefined) {
+        group = groupedByMilestone[issue.milestone.id] = {
           milestone: issue.milestone,
-          dueDate: issue.dueDate,
           data: [],
         };
       }
-      groupedByMilestone[issue.milestone].data.push(issue);
+      group.data.push(issue);
       return groupedByMilestone;
     }, {});
 
-    let sections = Object.keys(sectionsMap).map((section) => sectionsMap[section]);
+    let sections = Object.keys(sectionsMap).map(section => sectionsMap[section]);
     let sortedSections = sections.sort((a,b) => {
-      let dateCompare = a.dueDate - b.dueDate;
+      if (a.milestone.id == b.milestone.id) {
+        return 0;
+      }
+      let dateCompare = a.milestone.dueDate - b.milestone.dueDate;
       if (dateCompare !== 0) {
         return dateCompare;
       }
-      return a.milestone.localeCompare(b.milestone);
+      return a.milestone.title.localeCompare(b.milestone.title);
     });
-    
+
     return (
       <View>
         <TouchableWithoutFeedback onPress={() => {this.setState({collapsed: !this.state.collapsed})}}>
@@ -126,7 +114,7 @@ class IssueList extends Component {
         {!this.state.collapsed && 
         <SectionList
           sections={sortedSections}
-          renderSectionHeader={({section}) => <Text style={styles.milestoneSectionHeader}>{section.milestone}</Text>}
+          renderSectionHeader={({section}) => <Text style={styles.milestoneSectionHeader}>{section.milestone.title}</Text>}
           renderItem={({item}) => <Issue key={item.id} item={item}/>}/>
         }
       </View>
@@ -135,12 +123,6 @@ class IssueList extends Component {
 }
 
 class AssigneeList extends Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-    };
-  }
-
   render() {
     let assignees = Object.keys(this.props.issuesByAssignee).sort((a,b) => {
       let issuesA = this.props.issuesByAssignee[a];
@@ -157,12 +139,59 @@ class AssigneeList extends Component {
   }
 }
 
+class MilestoneList extends Component {
+  render() {
+    let milestones = Object.values(this.props.milestonesById).sort((a,b) => (b.count - a.count));
+    return (
+      <View style={styles.milestoneList}>
+        {milestones.map(milestone => (
+          <Text key={milestone.id}>{milestone.title}</Text>
+        ))}
+      </View>
+    )
+  }
+}
+
+class LabelList extends Component {
+  render() {
+    let labels = Object.values(this.props.labelsById).sort((a,b) => (b.count - a.count));
+    return (
+      <View style={styles.labelList}>
+        {labels.map(label => (
+          <Label key={label.id} name={label.name} color={label.color}/>
+        ))}
+      </View>
+    )
+  }
+}
+
 class GitHubQuery extends Component {
   constructor(props) {
     super(props);
     this.state = {
       issuesByAssignee: {},
+      milestonesById: {},
+      labelsById: {},
     };
+  }
+
+  countById(collection, item) {
+    let id = item.id;
+    let existing = collection[id];
+    if (!existing) {
+      existing = collection[id] = item;
+      existing.count = 1;
+    } else {
+      existing.count += 1;
+    }
+  }
+  addById(collection, id, item) {
+    let existing = collection[id];
+    if (!existing) {
+      collection[id] = [item];
+    } else {
+      existing.push(item);
+    }
   }
 
   processIssue(issue) {
@@ -171,38 +200,47 @@ class GitHubQuery extends Component {
     if (issueAssignee) {
       assignee = issueAssignee.login;
     }
-    let milestone = 'unscheduled';
-    let dueDate = new Date(8640000000000000);
+    let milestone = {};
     if (issue.milestone) {
-      milestone = issue.milestone.title;
-      dueDate = new Date(issue.milestone.due_on);
+      milestone.id = issue.milestone.id;
+      milestone.title = issue.milestone.title;
+      milestone.dueDate = new Date(issue.milestone.due_on);
+    } else {
+      milestone.id = 0;
+      milestone.title = 'unscheduled';
+      milestone.dueDate = new Date(8640000000000000);
     }
+    let labels = issue.labels.map(value => {
+      return {
+        id: value.id,
+        name: value.name,
+        color: value.color,
+      };
+    });
     return {
       id: issue.id,
       url: issue.url,
       title: issue.title,
       assignee: assignee,
       url: issue.html_url,
-      labels: issue.labels.map(value => {
-        return {
-          name: value.name,
-          color: value.color,
-        };
-      }),
-      milestone: milestone,
-      dueDate: dueDate,
+      labels: labels,
+      milestone: milestone
     };
   }
 
   processIssues(listOfIssues) {
-    this.issuesByAssignee = listOfIssues.reduce((accumulator, current) => {
+    listOfIssues.forEach(current => {
       let issue = this.processIssue(current);
-      if (accumulator[issue.assignee] === undefined) {
-        accumulator[issue.assignee] = [];
+      this.addById(this.issuesByAssignee, issue.assignee, issue);
+
+      issue.labels.forEach(label => {
+        this.countById(this.labelsById, label);
+      });
+
+      if (issue.milestone.id) {
+        this.countById(this.milestonesById, issue.milestone);
       }
-      accumulator[issue.assignee].push(issue);
-      return accumulator;
-    }, this.issuesByAssignee);
+    });
   }
 
   async queryIssues(pageNumber) {
@@ -239,10 +277,14 @@ class GitHubQuery extends Component {
 
   async queryAllIssues() {
     this.issuesByAssignee = {};
+    this.milestonesById = {};
+    this.labelsById = {};
     let pageNumber = 1;
 
     this.setState({
-      issuesByAssignee: [],
+      issuesByAssignee: {},
+      milestonesById: {},
+      labelsById: {},
       progress: 0.0,
     });
 
@@ -252,19 +294,21 @@ class GitHubQuery extends Component {
       try {
         pageData = await this.queryIssues(pageNumber);
       } catch {
-        console.log('Error getting page');
+        console.log(`Error getting ${pageNumber}`);
         break;
       }
       if (pageData === undefined || pageData.length === 0) {
-        console.log('End of pages');
+        console.log(`End of pages (no ${pageNumber})`);
         break;
       }
       this.processIssues(pageData);
       pageNumber = pageNumber + 1;
 
-      // TODO: Get expected number of pages so we can calcualte percentage
+      // TODO: Get expected number of pages so we can calculate percentage
       this.setState({
         issuesByAssignee: this.issuesByAssignee,
+        milestonesById: this.milestonesById,
+        labelsById: this.labelsById,
         progress: 0.5,
       });
     }
@@ -284,6 +328,8 @@ class GitHubQuery extends Component {
         {(this.state.progress < 1.0) &&
           <Text>Loading {this.state.progress}</Text>
         }
+        <MilestoneList milestonesById={this.state.milestonesById}/>
+        <LabelList labelsById={this.state.labelsById}/>
         <AssigneeList issuesByAssignee={this.state.issuesByAssignee}/>
       </>
     );
@@ -323,6 +369,14 @@ const styles = StyleSheet.create({
   },
   issue: {
     flexDirection: 'row',
+  },
+  labelList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  milestoneList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
   },
   label: {
     paddingLeft: 4,
