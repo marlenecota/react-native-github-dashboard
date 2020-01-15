@@ -142,9 +142,21 @@ class AssigneeList extends Component {
 class MilestoneList extends Component {
   render() {
     return (
-      <View>
+      <View style={styles.milestoneList}>
         {Object.values(this.props.milestonesById).map(milestone => (
           <Text key={milestone.id}>{milestone.title}</Text>
+        ))}
+      </View>
+    )
+  }
+}
+
+class LabelList extends Component {
+  render() {
+    return (
+      <View style={styles.labelList}>
+        {Object.values(this.props.labelsById).map(label => (
+          <Label key={label.id} name={label.name} color={label.color}/>
         ))}
       </View>
     )
@@ -157,6 +169,7 @@ class GitHubQuery extends Component {
     this.state = {
       issuesByAssignee: {},
       milestonesById: {},
+      labelsById: {},
     };
   }
 
@@ -265,6 +278,7 @@ class GitHubQuery extends Component {
     this.setState({
       issuesByAssignee: {},
       milestonesById: {},
+      labelsById: {},
       progress: 0.0,
     });
 
@@ -288,6 +302,7 @@ class GitHubQuery extends Component {
       this.setState({
         issuesByAssignee: this.issuesByAssignee,
         milestonesById: this.milestonesById,
+        labelsById: this.labelsById,
         progress: 0.5,
       });
     }
@@ -308,6 +323,7 @@ class GitHubQuery extends Component {
           <Text>Loading {this.state.progress}</Text>
         }
         <MilestoneList milestonesById={this.state.milestonesById}/>
+        <LabelList labelsById={this.state.labelsById}/>
         <AssigneeList issuesByAssignee={this.state.issuesByAssignee}/>
       </>
     );
@@ -347,6 +363,14 @@ const styles = StyleSheet.create({
   },
   issue: {
     flexDirection: 'row',
+  },
+  labelList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  milestoneList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
   },
   label: {
     paddingLeft: 4,
