@@ -202,19 +202,24 @@ class Page extends Component {
     }
   }
 
-  addToFilter(label) {
-    console.log(label);
-    this.setState({
-      labelFilter: [label.id],
-    });
-  }
-
   render() {
     let issuesByAssignee = {};
     let milestonesById = {};
     let labelsById = {};
 
     this.props.issues.forEach(issue => {
+
+      let filteredLabels = issue.labels.reduce((countMatchingFilters, current) => {
+        // TODO: Check whole list
+        if (this.state.labelFilter.length > 0 && this.state.labelFilter[0] == current.id) {
+          countMatchingFilters++;
+        }
+        return countMatchingFilters;
+      }, 0);
+      if (filteredLabels) {
+        return;
+      }
+
       this.addById(issuesByAssignee, issue.assignee, issue);
 
       issue.labels.forEach(label => {
@@ -229,7 +234,15 @@ class Page extends Component {
     return (
       <>
         <MilestoneList milestonesById={milestonesById}/>
-        <LabelList labelsById={labelsById} addToFilter={this.addToFilter}/>
+        <LabelList
+          labelsById={labelsById}
+          addToFilter={(label) => {
+            console.log(label);
+            // TODO: Append to list
+            this.setState({
+              labelFilter: [label.id],
+            });
+        }}/>
         <AssigneeList issuesByAssignee={issuesByAssignee} labelFilter={this.state.labelFilter}/>
       </>
     );
