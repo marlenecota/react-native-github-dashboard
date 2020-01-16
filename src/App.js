@@ -178,7 +178,7 @@ class Page extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      labelFilter: [],
+      requiredLabels: [],
     };
   }
 
@@ -209,18 +209,17 @@ class Page extends Component {
 
     this.props.issues.forEach(issue => {
 
-      let filteredLabels = issue.labels.reduce((countMatchingFilters, current) => {
+      let haveRequiredLabels = this.state.requiredLabels.length > 0;
+      let labelsMatched = issue.labels.reduce((labelsMatched, current) => {
         // TODO: Check whole list
-        if (this.state.labelFilter.length > 0 && this.state.labelFilter[0] == current.id) {
-          countMatchingFilters++;
+        if (this.state.requiredLabels.length > 0 && this.state.requiredLabels[0] == current.id) {
+          labelsMatched++;
         }
-        return countMatchingFilters;
+        return labelsMatched;
       }, 0);
-      if (filteredLabels) {
-        return;
+      if (!haveRequiredLabels || labelsMatched) {
+        this.addById(issuesByAssignee, issue.assignee, issue);
       }
-
-      this.addById(issuesByAssignee, issue.assignee, issue);
 
       issue.labels.forEach(label => {
         this.countById(labelsById, label);
@@ -240,10 +239,10 @@ class Page extends Component {
             console.log(label);
             // TODO: Append to list
             this.setState({
-              labelFilter: [label.id],
+              requiredLabels: [label.id],
             });
         }}/>
-        <AssigneeList issuesByAssignee={issuesByAssignee} labelFilter={this.state.labelFilter}/>
+        <AssigneeList issuesByAssignee={issuesByAssignee} requiredLabels={this.state.requiredLabels}/>
       </>
     );
   }
