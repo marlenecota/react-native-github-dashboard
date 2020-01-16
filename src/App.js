@@ -166,7 +166,7 @@ class LabelList extends Component {
       <View style={styles.labelList}>
         {labels.map(label => (
           <Label key={label.id} label={label} onPress={(label) => {
-            console.log(label);
+            this.props.addToFilter(label);
           }}/>
         ))}
       </View>
@@ -174,14 +174,11 @@ class LabelList extends Component {
   }
 }
 
-class GitHubQuery extends Component {
+class Page extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      useOfflineData: true,
-      issuesByAssignee: {},
-      milestonesById: {},
-      labelsById: {},
+      labelFilter: [],
     };
   }
 
@@ -195,6 +192,7 @@ class GitHubQuery extends Component {
       existing.count += 1;
     }
   }
+
   addById(collection, id, item) {
     let existing = collection[id];
     if (!existing) {
@@ -202,6 +200,49 @@ class GitHubQuery extends Component {
     } else {
       existing.push(item);
     }
+  }
+
+  addToFilter(label) {
+    console.log(label);
+    this.setState({
+      labelFilter: [label.id],
+    });
+  }
+
+  render() {
+    let issuesByAssignee = {};
+    let milestonesById = {};
+    let labelsById = {};
+
+    this.props.issues.forEach(issue => {
+      this.addById(issuesByAssignee, issue.assignee, issue);
+
+      issue.labels.forEach(label => {
+        this.countById(labelsById, label);
+      });
+
+      if (issue.milestone.id) {
+        this.countById(milestonesById, issue.milestone);
+      }
+    });
+
+    return (
+      <>
+        <MilestoneList milestonesById={milestonesById}/>
+        <LabelList labelsById={labelsById} addToFilter={this.addToFilter}/>
+        <AssigneeList issuesByAssignee={issuesByAssignee} labelFilter={this.state.labelFilter}/>
+      </>
+    );
+  }
+}
+
+class GitHubQuery extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      useOfflineData: true,
+      issues: [],
+    };
   }
 
   processIssue(issue) {
@@ -238,21 +279,6 @@ class GitHubQuery extends Component {
     };
   }
 
-  processIssues(listOfIssues) {
-    listOfIssues.forEach(current => {
-      let issue = this.processIssue(current);
-      this.addById(this.issuesByAssignee, issue.assignee, issue);
-
-      issue.labels.forEach(label => {
-        this.countById(this.labelsById, label);
-      });
-
-      if (issue.milestone.id) {
-        this.countById(this.milestonesById, issue.milestone);
-      }
-    });
-  }
-
   async queryIssues(pageNumber) {
     return new Promise((resolve, reject) => {
       let uri = `https://api.github.com/repos/microsoft/react-native-windows/issues?state=open&sort=updated&direction=desc&page=${pageNumber}`;
@@ -285,15 +311,11 @@ class GitHubQuery extends Component {
   }
 
   async queryAllIssues() {
-    this.issuesByAssignee = {};
-    this.milestonesById = {};
-    this.labelsById = {};
     let pageNumber = 1;
+    let issues = [];
 
     this.setState({
-      issuesByAssignee: {},
-      milestonesById: {},
-      labelsById: {},
+      issues: issues,
       progress: 0.0,
     });
 
@@ -310,14 +332,14 @@ class GitHubQuery extends Component {
         console.log(`End of pages (no ${pageNumber})`);
         break;
       }
-      this.processIssues(pageData);
+      issues = issues.concat(pageData.map(current => this.processIssue(current)));
+      this.setState({
+        issues: issues,
+      });
       pageNumber = pageNumber + 1;
 
       // TODO: Get expected number of pages so we can calculate percentage
       this.setState({
-        issuesByAssignee: this.issuesByAssignee,
-        milestonesById: this.milestonesById,
-        labelsById: this.labelsById,
         progress: 0.5,
       });
     }
@@ -337,9 +359,7 @@ class GitHubQuery extends Component {
         {(this.state.progress < 1.0) &&
           <Text>Loading {this.state.progress}</Text>
         }
-        <MilestoneList milestonesById={this.state.milestonesById}/>
-        <LabelList labelsById={this.state.labelsById}/>
-        <AssigneeList issuesByAssignee={this.state.issuesByAssignee}/>
+        <Page issues={this.state.issues}/>
       </>
     );
   }
