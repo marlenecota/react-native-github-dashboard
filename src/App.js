@@ -146,13 +146,31 @@ class AssigneeList extends Component {
   }
 }
 
+class Milestone extends Component {
+  render() {
+    return (
+      <TouchableWithoutFeedback
+        onPress={() => {
+          this.props.onPress(this.props.milestone);
+        }}>
+        <Text>{this.props.milestone.title}</Text>
+      </TouchableWithoutFeedback>
+    )
+  }
+}
+
 class MilestoneList extends Component {
   render() {
     let milestones = Object.values(this.props.milestonesById).sort((a,b) => (b.count - a.count));
     return (
       <View style={styles.milestoneList}>
         {milestones.map(milestone => (
-          <Text key={milestone.id}>{milestone.title}</Text>
+        <Milestone
+          key={milestone.id}
+          milestone={milestone}
+          onPress={(milestone) => {
+            this.props.addToFilter(milestone)
+          }}/>
         ))}
       </View>
     )
@@ -178,6 +196,7 @@ class Page extends Component {
   constructor(props) {
     super(props);
     this.state = {
+      requiredMilestone: 0,
       requiredLabels: [],
     };
   }
@@ -212,12 +231,16 @@ class Page extends Component {
       let haveRequiredLabels = this.state.requiredLabels.length > 0;
       let labelsMatched = issue.labels.reduce((labelsMatched, current) => {
         // TODO: Check whole list
-        if (this.state.requiredLabels.length > 0 && this.state.requiredLabels[0] == current.id) {
+        if (haveRequiredLabels > 0 && this.state.requiredLabels[0] == current.id) {
           labelsMatched++;
         }
         return labelsMatched;
       }, 0);
-      if (!haveRequiredLabels || labelsMatched) {
+
+      let milestonesMatched = this.state.requiredMilestone == issue.milestone.id;
+
+      if ((!haveRequiredLabels || labelsMatched) &&
+         (!this.state.requiredMilestone || milestonesMatched)) {
         this.addById(issuesByAssignee, issue.assignee, issue);
       }
 
@@ -232,11 +255,16 @@ class Page extends Component {
 
     return (
       <>
-        <MilestoneList milestonesById={milestonesById}/>
+        <MilestoneList
+          milestonesById={milestonesById}
+          addToFilter={(milestone) => {
+            this.setState({
+              requiredMilestone: milestone.id,
+            });
+        }}/>
         <LabelList
           labelsById={labelsById}
           addToFilter={(label) => {
-            console.log(label);
             // TODO: Append to list
             this.setState({
               requiredLabels: [label.id],
