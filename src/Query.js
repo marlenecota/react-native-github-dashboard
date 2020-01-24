@@ -28,7 +28,7 @@ class GitHubQuery extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      useOfflineData: true,
+      useOfflineData: false,
       repoUrl: 'https://api.github.com/repos/microsoft/react-native-windows',
       issues: [],
     };
@@ -106,7 +106,7 @@ class GitHubQuery extends Component {
       progress: 0.0,
     });
 
-    while (pageNumber < 3) {
+    while (pageNumber > 0) {
       console.log(`Try page ${pageNumber}`);
       let pageData = undefined;
       try {
