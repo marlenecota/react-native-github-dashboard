@@ -1,12 +1,8 @@
-/**
- * @format
- * @flow
- */
-
 import React, {Component} from 'react';
 import {
   View,
-  Text,
+  ActivityIndicator,
+  StyleSheet,
 } from 'react-native';
 
 import { RepoUrl } from './RepoUrl'
@@ -77,8 +73,6 @@ class GitHubQuery extends Component {
       let uri = `${this.state.repoUrl}/issues?state=open&sort=updated&direction=desc&page=${pageNumber}`;
       console.log(`Querying for ${pageNumber}: ${uri} (useOfflineData=${this.state.useOfflineData})`);
       
-      // Use offline data versus online data while this is under active development
-      // TODO: Enable a switch, or a cache so this happens naturally
       if (this.state.useOfflineData) {
         let pageData = offlineData[pageNumber - 1];
         resolve(pageData);
@@ -112,7 +106,7 @@ class GitHubQuery extends Component {
       progress: 0.0,
     });
 
-    while (pageNumber > 0) {
+    while (pageNumber < 3) {
       console.log(`Try page ${pageNumber}`);
       let pageData = undefined;
       try {
@@ -149,9 +143,6 @@ class GitHubQuery extends Component {
   render() {
     return (
       <>
-        {(this.state.progress < 1.0) &&
-          <Text>Loading {this.state.progress}</Text>
-        }
         <RepoUrl
           url={this.state.repoUrl}
           useCache={this.state.useOfflineData}
@@ -167,9 +158,26 @@ class GitHubQuery extends Component {
             this.queryAllIssues();
           }}/>
         <Page issues={this.state.issues}/>
+        {(this.state.progress < 1.0) &&
+          <View style={styles.loading}>
+            <ActivityIndicator size='large'/>
+          </View>
+        }
       </>
     );
   }
 }
+
+const styles = StyleSheet.create({
+  loading: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+});
 
 export { GitHubQuery };
