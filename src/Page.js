@@ -12,21 +12,19 @@ import { IssueList } from './Issue'
 import { LabelList } from './Label'
 import { MilestoneList } from './Milestone'
 
-class AssigneeList extends Component {
-  render() {
-    let assignees = Object.keys(this.props.issuesByAssignee).sort((a,b) => {
-      let issuesA = this.props.issuesByAssignee[a];
-      let issuesB = this.props.issuesByAssignee[b];
-      return issuesB.length - issuesA.length;
-    });
-    return assignees.map(assignee => (
-      <IssueList
-        key={assignee}
-        assignee={assignee}
-        list={this.props.issuesByAssignee[assignee]}
-      />
-    ));
-  }
+const AssigneeList = (props) => {
+  let assignees = Object.keys(props.issuesByAssignee).sort((a,b) => {
+    let issuesA = props.issuesByAssignee[a];
+    let issuesB = props.issuesByAssignee[b];
+    return issuesB.length - issuesA.length;
+  });
+  return assignees.map(assignee => (
+    <IssueList
+      key={assignee}
+      assignee={assignee}
+      list={props.issuesByAssignee[assignee]}
+    />
+  ));
 }
 
 class Page extends Component {

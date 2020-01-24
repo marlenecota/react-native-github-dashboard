@@ -6,7 +6,6 @@
 import React, {Component} from 'react';
 import {
   StyleSheet,
-  ScrollView,
   View,
   Text,
   TouchableWithoutFeedback,
@@ -38,19 +37,17 @@ class Label extends Component {
   }
 }
 
-class LabelList extends Component {
-  render() {
-    let labels = Object.values(this.props.labelsById).sort((a,b) => (b.count - a.count));
-    return (
-      <View style={styles.labelList}>
-        {labels.map(label => (
-          <Label key={label.id} label={label} onPress={(label) => {
-            this.props.addToFilter(label);
-          }}/>
-        ))}
-      </View>
-    )
-  }
+const LabelList = (props) => {
+  let labels = Object.values(props.labelsById).sort((a,b) => (b.count - a.count));
+  return (
+    <View style={styles.labelList}>
+      {labels.map(label => (
+        <Label key={label.id} label={label} onPress={(label) => {
+          props.addToFilter(label);
+        }}/>
+      ))}
+    </View>
+  )
 }
 
 const styles = StyleSheet.create({

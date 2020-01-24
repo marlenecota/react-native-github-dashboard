@@ -21,19 +21,17 @@ import {
   Label,
 } from './Label'
 
-class Issue extends Component {
-  render() {
-    return (
-      <View style={styles.issue}>
-        <TouchableWithoutFeedback onPress={() => {Linking.openURL(this.props.item.url)}}>
-          <Text style={styles.issueTitle}>{this.props.item.title}</Text>
-        </TouchableWithoutFeedback>
-        {this.props.item.labels.map(label => (
-          <Label key={label.id} label={label}/>
-        ))}
-      </View>
-    );
-  }
+const Issue = (props) => {
+  return (
+    <View style={styles.issue}>
+      <TouchableWithoutFeedback onPress={() => {Linking.openURL(props.item.url)}}>
+        <Text style={styles.issueTitle}>{props.item.title}</Text>
+      </TouchableWithoutFeedback>
+      {props.item.labels.map(label => (
+        <Label key={label.id} label={label}/>
+      ))}
+    </View>
+  );
 }
 
 class IssueList extends Component {

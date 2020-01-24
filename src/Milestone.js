@@ -11,35 +11,31 @@ import {
   TouchableWithoutFeedback,
 } from 'react-native';
 
-class Milestone extends Component {
-  render() {
-    return (
-      <TouchableWithoutFeedback
-        onPress={() => {
-          this.props.onPress(this.props.milestone);
-        }}>
-        <Text>{this.props.milestone.title}</Text>
-      </TouchableWithoutFeedback>
-    )
-  }
+const Milestone = (props) => {
+  return (
+    <TouchableWithoutFeedback
+      onPress={() => {
+        props.onPress(props.milestone);
+      }}>
+      <Text>{props.milestone.title}</Text>
+    </TouchableWithoutFeedback>
+  )
 }
 
-class MilestoneList extends Component {
-  render() {
-    let milestones = Object.values(this.props.milestonesById).sort((a,b) => (b.count - a.count));
-    return (
-      <View style={styles.milestoneList}>
-        {milestones.map(milestone => (
-        <Milestone
-          key={milestone.id}
-          milestone={milestone}
-          onPress={(milestone) => {
-            this.props.addToFilter(milestone)
-          }}/>
-        ))}
-      </View>
-    )
-  }
+const MilestoneList = (props) => {
+  let milestones = Object.values(props.milestonesById).sort((a,b) => (b.count - a.count));
+  return (
+    <View style={styles.milestoneList}>
+      {milestones.map(milestone => (
+      <Milestone
+        key={milestone.id}
+        milestone={milestone}
+        onPress={(milestone) => {
+          props.addToFilter(milestone)
+        }}/>
+      ))}
+    </View>
+  )
 }
 
 const styles = StyleSheet.create({
