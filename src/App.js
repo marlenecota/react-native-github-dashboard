@@ -17,6 +17,8 @@ import {
   TouchableWithoutFeedback,
   Linking,
   SectionList,
+  Switch,
+  TextInput,
 } from 'react-native';
 
 import {
@@ -38,6 +40,29 @@ const offlineData = [
   require('./offline/page12.json'),
   require('./offline/page13.json'),
 ];
+
+class RepoUrl extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      value: this.props.url,
+    };
+  }
+  render() {
+    return (
+      <View style={{flexDirection: 'row'}}>
+        <TextInput
+          style={{height: 32, flexGrow: 1}}
+          value={this.state.value}
+          onChangeText={value => this.setState({value: value})}
+          onSubmitEditing={event => this.props.onUrlChanged(event.nativeEvent.text)}/>
+        <Switch
+          value={this.props.useCache}
+          onValueChange={value => this.props.onUseCacheChanged(value)}/>
+      </View>
+    )
+  }
+}
 
 class Label extends Component {
   getContrastYIQ(hexcolor) {
@@ -281,6 +306,7 @@ class GitHubQuery extends Component {
     super(props);
     this.state = {
       useOfflineData: true,
+      repoUrl: 'https://api.github.com/repos/microsoft/react-native-windows',
       issues: [],
     };
   }
@@ -321,8 +347,8 @@ class GitHubQuery extends Component {
 
   async queryIssues(pageNumber) {
     return new Promise((resolve, reject) => {
-      let uri = `https://api.github.com/repos/microsoft/react-native-windows/issues?state=open&sort=updated&direction=desc&page=${pageNumber}`;
-      console.log(`Querying for ${pageNumber}: ${uri}`);
+      let uri = `${this.state.repoUrl}/issues?state=open&sort=updated&direction=desc&page=${pageNumber}`;
+      console.log(`Querying for ${pageNumber}: ${uri} (useOfflineData=${this.state.useOfflineData})`);
       
       // Use offline data versus online data while this is under active development
       // TODO: Enable a switch, or a cache so this happens naturally
@@ -399,6 +425,20 @@ class GitHubQuery extends Component {
         {(this.state.progress < 1.0) &&
           <Text>Loading {this.state.progress}</Text>
         }
+        <RepoUrl
+          url={this.state.repoUrl}
+          useCache={this.state.useOfflineData}
+          onUrlChanged={url => {
+              this.setState({
+              repoUrl: url,
+            });
+            this.queryAllIssues();}}
+          onUseCacheChanged={useCache => {
+            this.setState({
+              useOfflineData: useCache,
+            });
+            this.queryAllIssues();
+          }}/>
         <Page issues={this.state.issues}/>
       </>
     );
