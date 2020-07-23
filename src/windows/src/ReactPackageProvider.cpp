@@ -1,11 +1,9 @@
 #include "pch.h"
 #include "ReactPackageProvider.h"
-
 #include "NativeModules.h"
 
 
-
-using namespace winrt::Microsoft::ReactNative::Bridge;
+using namespace winrt::Microsoft::ReactNative;
 
 namespace winrt::src::implementation
 {

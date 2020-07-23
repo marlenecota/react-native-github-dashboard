@@ -1,20 +1,15 @@
 #pragma once
 
-#include "winrt/Microsoft.ReactNative.Bridge.h"
+#include "winrt/Microsoft.ReactNative.h"
 
-
-
-using namespace winrt::Microsoft::ReactNative::Bridge;
 
 namespace winrt::src::implementation
 {
-
-    struct ReactPackageProvider : winrt::implements<ReactPackageProvider, IReactPackageProvider>
+    struct ReactPackageProvider : winrt::implements<ReactPackageProvider, winrt::Microsoft::ReactNative::IReactPackageProvider>
     {
     public: // IReactPackageProvider
-        void CreatePackage(IReactPackageBuilder const &packageBuilder) noexcept;
+        void CreatePackage(winrt::Microsoft::ReactNative::IReactPackageBuilder const &packageBuilder) noexcept;
     };
-
 } // namespace winrt::src::implementation
 
 
