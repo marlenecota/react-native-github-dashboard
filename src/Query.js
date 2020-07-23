@@ -8,6 +8,8 @@ import {
 import { RepoUrl } from './RepoUrl'
 import { Page } from './Page'
 
+import AsyncStorage from '@react-native-community/async-storage';
+
 const offlineData = [
   require('./offline/page1.json'),
   require('./offline/page2.json'),
@@ -28,7 +30,7 @@ class GitHubQuery extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      useOfflineData: false,
+      useOfflineData: true,
       repoUrl: 'https://api.github.com/repos/microsoft/react-native-windows',
       issues: [],
     };
@@ -69,21 +71,49 @@ class GitHubQuery extends Component {
   }
 
   async queryIssues(pageNumber) {
+    let uri = `${this.state.repoUrl}/issues?state=open&sort=updated&direction=desc&page=${pageNumber}`;
+
+    let storedValue;
+    if (this.state.useOfflineData) {
+      try {
+        storedValue = await AsyncStorage.getItem(uri);
+      } catch(e) {
+      }
+    }
+
     return new Promise((resolve, reject) => {
-      let uri = `${this.state.repoUrl}/issues?state=open&sort=updated&direction=desc&page=${pageNumber}`;
-      console.log(`Querying for ${pageNumber}: ${uri} (useOfflineData=${this.state.useOfflineData})`);
-      
+      try {
+        if (storedValue !== null) {
+          let storedJSONValue = JSON.parse(storedValue)
+          console.log(`Using cached value for ${pageNumber}`);
+          resolve(storedJSONValue);
+          return;
+        }
+      } catch(e) {
+        console.log(`Error parsing cached value for ${pageNumber}`);
+        console.log(e);
+      }
+
+      // TODO: This should be come effectively placeholder data for if you've never been online (no cache)
       if (this.state.useOfflineData) {
         let pageData = offlineData[pageNumber - 1];
         resolve(pageData);
       } else {
         let request = new XMLHttpRequest();
         request.onload = () => {
+          console.log(`Querying for ${pageNumber}: ${uri} (useOfflineData=${this.state.useOfflineData})`);
           let pageData = JSON.parse(request.responseText);
           resolve(pageData);
+
+          try {
+            AsyncStorage.setItem(uri, request.responseText)
+          } catch (e) {
+            console.log(`Error caching value for ${pageNumber}`);
+            console.log(e);
+          }
         };
         request.onerror = () => {
-          console.log('Error!');
+          console.log(`Error fetching ${pageNumber}`);
           reject();
         };
         request.open(
