@@ -8,6 +8,8 @@ import {
 import { RepoUrl } from './RepoUrl'
 import { Page } from './Page'
 
+import AsyncStorage from '@react-native-community/async-storage';
+
 const offlineData = [
   require('./offline/page1.json'),
   require('./offline/page2.json'),
@@ -28,7 +30,7 @@ class GitHubQuery extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      useOfflineData: false,
+      useOfflineData: true,
       repoUrl: 'https://api.github.com/repos/microsoft/react-native-windows',
       issues: [],
     };
@@ -68,22 +70,72 @@ class GitHubQuery extends Component {
     };
   }
 
+  parseLinkHeader(request) {
+    let header = request.getResponseHeader("link");
+
+    let matches = [...header.matchAll(/<(.+?)page=(\d+)>;\s*rel="(\w+)",*/g)];
+
+    return matches.reduce((linkHeaders, match) => {
+      linkHeaders[match[3]] = {
+        linkType: match[3],
+        baseUri: match[1],
+        pageNumber: match[2]
+      };
+      return linkHeaders;
+    }, {});
+  }
+
   async queryIssues(pageNumber) {
+    let uri = `${this.state.repoUrl}/issues?state=open&sort=updated&direction=desc&page=${pageNumber}`;
+
+    let storedValue = undefined;
+    if (this.state.useOfflineData) {
+      try {
+        storedValue = await AsyncStorage.getItem(uri);
+      } catch(e) {
+      }
+    }
+
     return new Promise((resolve, reject) => {
-      let uri = `${this.state.repoUrl}/issues?state=open&sort=updated&direction=desc&page=${pageNumber}`;
-      console.log(`Querying for ${pageNumber}: ${uri} (useOfflineData=${this.state.useOfflineData})`);
-      
-      if (this.state.useOfflineData) {
+      try {
+        if (storedValue !== null) {
+          let storedJSONValue = JSON.parse(storedValue)
+          console.log(`Using cached value for ${pageNumber}: ${uri}`);
+          resolve(storedJSONValue);
+          return;
+        }
+      } catch(e) {
+        console.log(`Error parsing cached value for ${pageNumber}`);
+        console.log(e);
+        console.log(storedValue);
+      }
+
+      // TODO: This should be come effectively placeholder data for if you've never been online (no cache)
+      /*if (this.state.useOfflineData) {
         let pageData = offlineData[pageNumber - 1];
         resolve(pageData);
-      } else {
+      } else*/
+      {
         let request = new XMLHttpRequest();
         request.onload = () => {
-          let pageData = JSON.parse(request.responseText);
+          console.log(`Querying for ${pageNumber}: ${uri} (useOfflineData=${this.state.useOfflineData})`);
+
+          let pageData = {
+            data: JSON.parse(request.responseText),
+            linkHeaders: this.parseLinkHeader(request)
+          }
+
           resolve(pageData);
+
+          try {
+            AsyncStorage.setItem(uri, JSON.stringify(pageData));
+          } catch (e) {
+            console.log(`Error caching value for ${pageNumber}`);
+            console.log(e);
+          }
         };
         request.onerror = () => {
-          console.log('Error!');
+          console.log(`Error fetching ${pageNumber}`);
           reject();
         };
         request.open(
@@ -98,7 +150,7 @@ class GitHubQuery extends Component {
   }
 
   async queryAllIssues() {
-    let pageNumber = 1;
+    let firstPageNumber = 1;
     let issues = [];
 
     this.setState({
@@ -106,34 +158,62 @@ class GitHubQuery extends Component {
       progress: 0.0,
     });
 
-    while (pageNumber > 0) {
-      console.log(`Try page ${pageNumber}`);
-      let pageData = undefined;
-      try {
-        pageData = await this.queryIssues(pageNumber);
-      } catch {
-        console.log(`Error getting ${pageNumber}`);
-        break;
-      }
-      if (pageData === undefined || pageData.length === 0) {
-        console.log(`End of pages (no ${pageNumber})`);
-        break;
-      }
-      issues = issues.concat(pageData.map(current => this.processIssue(current)));
-      this.setState({
-        issues: issues,
-      });
-      pageNumber = pageNumber + 1;
+    console.log(`Trying first page #${firstPageNumber}`);
+    let firstPageData = undefined;
+    try {
+      firstPageData = await this.queryIssues(firstPageNumber);
+    } catch {
+      console.log(`Error getting first page`);
+      return;
+    }
 
-      // TODO: Get expected number of pages so we can calculate percentage
+    const isPageDataValid = (pageData) => {
+      if (pageData === undefined) {
+        console.log(`No page data`);
+        return false;
+      } 
+      if (pageData.data === undefined || pageData.data.length === 0) {
+        console.log(`Malformed page data`);
+        console.log(pageData);
+        return false;
+      }
+      return true;
+    }
+    if (!isPageDataValid(firstPageData)) {
+      return;
+    } 
+
+    let lastPageNumber = firstPageData.linkHeaders.last.pageNumber;
+    console.log(`Last page # is ${lastPageNumber}`);
+
+    let pagesCompleted = 0;
+
+    const processPage = (pageData) => {
+      if (isPageDataValid(pageData)) {
+        let pageNumber;
+        if (pageData.linkHeaders.next) {
+          pageNumber = parseInt(pageData.linkHeaders.next.pageNumber) - 1;
+        } else {
+          pageNumber = parseInt(pageData.linkHeaders.prev.pageNumber) + 1;
+        }
+        console.log(`Processing page #${pageNumber}`);
+        issues = issues.concat(pageData.data.map(current => this.processIssue(current)));
+      }
+      pagesCompleted++;
+      let progress = pagesCompleted / lastPageNumber;
       this.setState({
-        progress: 0.5,
+        progress: progress,
+        issues: issues,
       });
     }
 
-    this.setState({
-      progress: 1.0,
-    });
+    processPage(firstPageData);
+
+    // Go fetch all the remaining pages in parallel
+    for (let parallelPageNumber = firstPageNumber + 1; parallelPageNumber <= lastPageNumber; parallelPageNumber++) {
+      console.log(`Querying page #${parallelPageNumber}`);
+      this.queryIssues(parallelPageNumber).then(processPage);
+    }
   }
 
   async componentDidMount() {
