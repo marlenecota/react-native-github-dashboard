@@ -1,14 +1,10 @@
-import React, {Fragment, Component} from 'react';
+import React, {Fragment} from 'react';
 import {
   SafeAreaView,
   StyleSheet,
   ScrollView,
   StatusBar,
 } from 'react-native';
-
-import {
-  Colors,
-} from 'react-native/Libraries/NewAppScreen';
 
 import { GitHubQuery } from './Query'
 
@@ -29,7 +25,7 @@ const App = () => {
 
 const styles = StyleSheet.create({
   scrollView: {
-    backgroundColor: Colors.lighter,
+    backgroundColor: 'white',
   },
 });
 
