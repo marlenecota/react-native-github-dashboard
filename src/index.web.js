@@ -5,9 +5,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import App from './src/App';
-import {name as appName} from './app.json';
+import {displayName as appDisplayName} from './app.json';
 
-document.title = appName;
+document.title = appDisplayName;
 
 ReactDOM.render(
     <React.StrictMode>
