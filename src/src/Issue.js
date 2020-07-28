@@ -9,10 +9,6 @@ import {
 } from 'react-native';
 
 import {
-  Colors,
-} from 'react-native/Libraries/NewAppScreen';
-
-import {
   Label,
 } from './Label'
 
@@ -80,16 +76,16 @@ class IssueList extends Component {
 
 const styles = StyleSheet.create({
   issueTitle: {
-    backgroundColor: Colors.white,
+    backgroundColor: 'white',
   },
   assignee: {
     fontSize: 24,
     fontWeight: '600',
-    color: Colors.black,
+    color: 'black',
   },
   milestoneSectionHeader: {
     fontWeight: '600',
-    color: Colors.black,
+    color: 'black',
   },
   issue: {
     flexDirection: 'row',
