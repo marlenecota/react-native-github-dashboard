@@ -11,19 +11,19 @@ import { Page } from './Page'
 import AsyncStorage from '@react-native-community/async-storage';
 
 const offlineData = [
-  require('./offline/page1.json'),
-  require('./offline/page2.json'),
-  require('./offline/page3.json'),
-  require('./offline/page4.json'),
-  require('./offline/page5.json'),
-  require('./offline/page6.json'),
-  require('./offline/page7.json'),
-  require('./offline/page8.json'),
-  require('./offline/page9.json'),
-  require('./offline/page10.json'),
-  require('./offline/page11.json'),
-  require('./offline/page12.json'),
-  require('./offline/page13.json'),
+  require('../offline/page1.json'),
+  require('../offline/page2.json'),
+  require('../offline/page3.json'),
+  require('../offline/page4.json'),
+  require('../offline/page5.json'),
+  require('../offline/page6.json'),
+  require('../offline/page7.json'),
+  require('../offline/page8.json'),
+  require('../offline/page9.json'),
+  require('../offline/page10.json'),
+  require('../offline/page11.json'),
+  require('../offline/page12.json'),
+  require('../offline/page13.json'),
 ];
 
 class GitHubQuery extends Component {
