@@ -25,6 +25,7 @@ class Page extends Component {
     this.state = {
       requiredMilestone: 0,
       requiredLabels: [],
+      forbiddenLabels: [],
     };
   }
 
@@ -56,17 +57,24 @@ class Page extends Component {
     this.props.issues.forEach(issue => {
 
       let haveRequiredLabels = this.state.requiredLabels.length > 0;
-      let labelsMatched = issue.labels.reduce((labelsMatched, current) => {
-        // TODO: Check whole list
-        if (haveRequiredLabels > 0 && this.state.requiredLabels[0] == current.id) {
-          labelsMatched++;
+      let requiredLabelsMatched = issue.labels.reduce((requiredLabelsMatched, current) => {
+        if (this.state.requiredLabels.includes(current.id)) {
+          requiredLabelsMatched++;
         }
-        return labelsMatched;
+        return requiredLabelsMatched;
+      }, 0);
+
+      let forbiddenLabelsMatched = issue.labels.reduce((forbiddenLabelsMatched, current) => {
+        if (this.state.forbiddenLabels.includes(current.id)) {
+          forbiddenLabelsMatched++;
+        }
+        return forbiddenLabelsMatched;
       }, 0);
 
       let milestonesMatched = this.state.requiredMilestone == issue.milestone.id;
 
-      if ((!haveRequiredLabels || labelsMatched) &&
+      if ((forbiddenLabelsMatched == 0) && 
+         (!haveRequiredLabels || requiredLabelsMatched) &&
          (!this.state.requiredMilestone || milestonesMatched)) {
         this.addById(issuesByAssignee, issue.assignee, issue);
       }
@@ -80,6 +88,18 @@ class Page extends Component {
       }
     });
 
+    const toggleFromList = (list, item) => {
+      let index = list.indexOf(item);
+      let newList;
+      if (index >= 0) {
+        newList = [...list];
+        newList.splice(index, 1);
+      } else {
+        newList = [item, ...list];
+      }
+      return newList;
+    }
+
     return (
       <>
         <MilestoneList
@@ -92,18 +112,20 @@ class Page extends Component {
         <LabelFilterList
           labelsById={labelsById}
           requiredLabels={this.state.requiredLabels}
+          forbiddenLabels={this.state.forbiddenLabels}
           addToFilter={(label) => {
-            let index = this.state.requiredLabels.indexOf(label.id);
-            let requiredLabels = this.state.requiredLabels;
-            if (index >= 0) {
-              requiredLabels.splice(index, 1);
-            } else {
-              requiredLabels = [label.id, ...requiredLabels];
-            }
+            console.log(`Require '${label.name}'`);
             this.setState({
-              requiredLabels: requiredLabels,
+              requiredLabels: toggleFromList(this.state.requiredLabels, label.id),
             });
-        }}/>
+          }}
+          filterOut={(label) => {
+            console.log(`Forbid '${label.name}'`);
+            this.setState({
+              forbiddenLabels: toggleFromList(this.state.forbiddenLabels, label.id),
+            });
+          }}
+        />
         <AssigneeList
           issuesByAssignee={issuesByAssignee}
           requiredLabels={this.state.requiredLabels}/>

@@ -19,6 +19,8 @@ const getContrastYIQ = (hexcolor) => {
 class Label extends Component {
   render() {
     let foregroundColor = this.props.foregroundColor ?? getContrastYIQ(this.props.label.color);
+    let backgroundColor = '#' + this.props.label.color;
+
     return (
       <TouchableWithoutFeedback
         accessibilityRole={this.props.onPress ? 'button' : 'link'}
@@ -30,8 +32,8 @@ class Label extends Component {
             Linking.openURL(this.props.label.url)
           }
         }}>
-        <View style={{backgroundColor: '#' + this.props.label.color, ...styles.labelContainer}}>
-          <Text style={{color: foregroundColor, ...styles.labelText}}>{this.props.label.name}</Text>
+        <View style={[styles.labelContainer, {backgroundColor: backgroundColor}]}>
+          <Text style={[styles.labelText, {color: foregroundColor}]}>{this.props.label.name}</Text>
           {this.props.children}
         </View>
       </TouchableWithoutFeedback>
@@ -45,6 +47,7 @@ const LabelFilterList = (props) => {
     <View style={styles.labelList}>
       {labels.map(label => {
         let isRequired = props.requiredLabels.includes(label.id);
+        let isForbidden = props.forbiddenLabels.includes(label.id);
         let foregroundColor = getContrastYIQ(label.color);
         return (
           <View
@@ -58,9 +61,18 @@ const LabelFilterList = (props) => {
                 props.addToFilter(label);
             }}>
               {(isRequired ?
-                <Text style={{color: foregroundColor, ...styles.filterIcon}}>&#xE71C;</Text> :
+                <Text style={[styles.filterIcon, {color: foregroundColor}]}>&#xE71C;</Text> :
                 null)
               }
+              <TouchableWithoutFeedback
+                onPress={() => {
+                  props.filterOut(label);
+                }}>
+                {isForbidden
+                ? <Text style={[styles.closeIcon, {color: foregroundColor}]}>&#xE710;</Text>
+                : <Text style={[styles.closeIcon, {color: foregroundColor}]}>&#xE711;</Text>
+                }
+              </TouchableWithoutFeedback>
             </Label>
             
           </View>
@@ -92,7 +104,12 @@ const styles = StyleSheet.create({
   },
   filterIcon: {
     fontFamily: 'Segoe MDL2 Assets',
-    fontSize: 11,
+    fontSize: 10,
+  },
+  closeIcon: {
+    fontFamily: 'Segoe MDL2 Assets',
+    fontSize: 10,
+    marginLeft: 4,
   }
 });
 
