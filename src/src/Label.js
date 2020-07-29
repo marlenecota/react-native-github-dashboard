@@ -7,19 +7,46 @@ import {
   Linking,
 } from 'react-native';
 
-const getContrastYIQ = (hexcolor) => {
+const unpackHexColor = (hexcolor) => {
   hexcolor = hexcolor.replace('#', '');
   let r = parseInt(hexcolor.substr(0,2),16);
   let g = parseInt(hexcolor.substr(2,2),16);
   let b = parseInt(hexcolor.substr(4,2),16);
+  return {r, g, b};
+}
+
+const packHexColor = (r, g, b) => {
+  const componentToHex= (c) => {
+    let hex = c.toString(16);
+    return hex.length == 1 ? "0" + hex : hex;
+  }
+  return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
+}
+
+const getContrastYIQ = (hexcolor) => {
+  let {r, g, b} = unpackHexColor(hexcolor);
   let yiq = ((r*299)+(g*587)+(b*114))/1000;
   return (yiq >= 128) ? 'black' : 'white';
 }
 
+const desaturateColor = (hexcolor, saturation) => {
+  let {r, g, b} = unpackHexColor(hexcolor);
+  var gray = r * 0.3086 + g * 0.6094 + b * 0.0820;
+
+  const desaturateComponent = (c) => {
+    return Math.round(c * saturation + gray * (1-saturation))
+  }
+
+  return packHexColor(
+    desaturateComponent(r),
+    desaturateComponent(g),
+    desaturateComponent(b));
+}
+
 class Label extends Component {
   render() {
-    let foregroundColor = this.props.foregroundColor ?? getContrastYIQ(this.props.label.color);
-    let backgroundColor = '#' + this.props.label.color;
+    let backgroundColor = this.props.backgroundColor ?? '#' + this.props.label.color;
+    let foregroundColor = this.props.foregroundColor ?? getContrastYIQ(backgroundColor);
 
     return (
       <TouchableWithoutFeedback
@@ -48,7 +75,12 @@ const LabelFilterList = (props) => {
       {labels.map(label => {
         let isRequired = props.requiredLabels.includes(label.id);
         let isForbidden = props.forbiddenLabels.includes(label.id);
-        let foregroundColor = getContrastYIQ(label.color);
+        let areAnyRequired = props.requiredLabels.length > 0;
+
+        let backgroundColor = areAnyRequired && !isRequired
+          ? desaturateColor(label.color, 0.1)
+          : '#' + label.color;
+        let foregroundColor = getContrastYIQ(backgroundColor);
         return (
           <View
             key={label.id}
@@ -56,6 +88,7 @@ const LabelFilterList = (props) => {
             <Label
               accessibilityRole='button'
               label={label}
+              backgroundColor={backgroundColor}
               foregroundColor={foregroundColor}
               onPress={(label) => {
                 props.addToFilter(label);
