@@ -44,7 +44,7 @@ const LabelFilterList = (props) => {
   return (
     <View style={styles.labelList}>
       {labels.map(label => {
-        let isRequired = props.requiredLabels == label.id;
+        let isRequired = props.requiredLabels.includes(label.id);
         let foregroundColor = getContrastYIQ(label.color);
         return (
           <View

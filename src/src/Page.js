@@ -93,17 +93,16 @@ class Page extends Component {
           labelsById={labelsById}
           requiredLabels={this.state.requiredLabels}
           addToFilter={(label) => {
-            // TODO: Append to list
-            console.log(`filter to ${label.id}`);
-            if (this.state.requiredLabels == label.id) {
-              this.setState({
-                requiredLabels: [],
-              });
+            let index = this.state.requiredLabels.indexOf(label.id);
+            let requiredLabels = this.state.requiredLabels;
+            if (index >= 0) {
+              requiredLabels.splice(index, 1);
             } else {
-              this.setState({
-                requiredLabels: [label.id],
-              });
+              requiredLabels = [label.id, ...requiredLabels];
             }
+            this.setState({
+              requiredLabels: requiredLabels,
+            });
         }}/>
         <AssigneeList
           issuesByAssignee={issuesByAssignee}
