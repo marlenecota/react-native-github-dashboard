@@ -9,6 +9,7 @@ import {
 const Milestone = (props) => {
   return (
     <TouchableWithoutFeedback
+      accessibilityRole="button"
       onPress={() => {
         props.onPress(props.milestone);
       }}>
@@ -18,7 +19,7 @@ const Milestone = (props) => {
 }
 
 const MilestoneList = (props) => {
-  let milestones = Object.values(props.milestonesById).sort((a,b) => (b.count - a.count));
+  let milestones = Object.values(props.milestonesById).sort((a,b) => (a.dueDate - b.dueDate));
   return (
     <View style={styles.milestoneList}>
       {milestones.map(milestone => (

@@ -15,7 +15,10 @@ import {
 const Issue = (props) => {
   return (
     <View style={styles.issue}>
-      <TouchableWithoutFeedback onPress={() => {Linking.openURL(props.item.url)}}>
+      <TouchableWithoutFeedback
+        accessibilityRole='link'
+        href={props.item.url}
+        onPress={() => {Linking.openURL(props.item.url)}}>
         <Text style={styles.issueTitle}>{props.item.title}</Text>
       </TouchableWithoutFeedback>
       {props.item.labels.map(label => (
@@ -60,14 +63,26 @@ class IssueList extends Component {
 
     return (
       <View>
-        <TouchableWithoutFeedback onPress={() => {this.setState({collapsed: !this.state.collapsed})}}>
+        <TouchableWithoutFeedback 
+          accessibilityRole='header'
+          aria-level="2" 
+          onPress={() => {this.setState({collapsed: !this.state.collapsed})}}>
           <Text style={styles.assignee}>{this.props.assignee} ({this.props.list.length})</Text>
         </TouchableWithoutFeedback>
         {!this.state.collapsed && 
         <SectionList
           sections={sortedSections}
-          renderSectionHeader={({section}) => <Text style={styles.milestoneSectionHeader}>{section.milestone.title}</Text>}
-          renderItem={({item}) => <Issue key={item.id} item={item}/>}/>
+          renderSectionHeader={({section}) =>
+            <Text
+              accessibilityRole='header'
+              aria-level="3" 
+              style={styles.milestoneSectionHeader}>{section.milestone.title}
+            </Text>}
+          renderItem={({item}) =>
+            <Issue
+              key={item.id}
+              item={item}>
+            </Issue>}/>
         }
       </View>
     );
@@ -89,7 +104,8 @@ const styles = StyleSheet.create({
   },
   issue: {
     flexDirection: 'row',
-  },
+    flexWrap: 'wrap',
+  }
 });
 
 export { Issue, IssueList };

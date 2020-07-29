@@ -4,6 +4,7 @@ import {
   View,
   Text,
   TouchableWithoutFeedback,
+  Linking,
 } from 'react-native';
 
 class Label extends Component {
@@ -19,9 +20,13 @@ class Label extends Component {
   render() {
     return (
       <TouchableWithoutFeedback
+        accessibilityRole={this.props.onPress ? 'button' : 'link'}
+        href={this.props.label.url}
         onPress={() => {
           if (this.props.onPress) {
             this.props.onPress(this.props.label);
+          } else {
+            Linking.openURL(this.props.label.url)
           }
         }}>
         <View style={{backgroundColor: '#' + this.props.label.color, ...styles.label}}>
@@ -37,8 +42,12 @@ const LabelList = (props) => {
   return (
     <View style={styles.labelList}>
       {labels.map(label => (
-        <Label key={label.id} label={label} onPress={(label) => {
-          props.addToFilter(label);
+        <Label
+          accessibilityRole='button'
+          key={label.id}
+          label={label}
+          onPress={(label) => {
+            props.addToFilter(label);
         }}/>
       ))}
     </View>
@@ -53,7 +62,7 @@ const styles = StyleSheet.create({
   label: {
     paddingLeft: 4,
     paddingRight: 4,
-    marginLeft: 4,
+    marginRight: 4,
   },
   labelText: {
 
