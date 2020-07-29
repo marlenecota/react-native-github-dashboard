@@ -19,10 +19,15 @@ const Issue = (props) => {
         accessibilityRole='link'
         href={props.item.url}
         onPress={() => {Linking.openURL(props.item.url)}}>
-        <Text style={styles.issueTitle}>{props.item.title}</Text>
+        <View style={styles.issueNumberContainer}>
+          <Text style={styles.issueNumber}>{props.item.number}</Text>
+        </View>
       </TouchableWithoutFeedback>
+      <Text style={styles.issueTitle}>{props.item.title}</Text>
       {props.item.labels.map(label => (
-        <Label key={label.id} label={label}/>
+        <View style={styles.labelListItem}>
+          <Label key={label.id} label={label}/>
+        </View>
       ))}
     </View>
   );
@@ -67,7 +72,10 @@ class IssueList extends Component {
           accessibilityRole='header'
           aria-level="2" 
           onPress={() => {this.setState({collapsed: !this.state.collapsed})}}>
-          <Text style={styles.assignee}>{this.props.assignee} ({this.props.list.length})</Text>
+          <Text
+            style={styles.assignee}>
+            {this.props.assignee} ({this.props.list.length})
+          </Text>
         </TouchableWithoutFeedback>
         {!this.state.collapsed && 
         <SectionList
@@ -92,6 +100,20 @@ class IssueList extends Component {
 const styles = StyleSheet.create({
   issueTitle: {
     backgroundColor: 'white',
+    marginLeft: 8,
+    marginRight: 8,
+    fontSize: 14,
+  },
+  issueNumberContainer: {
+    backgroundColor: 'grey',
+    paddingLeft: 4,
+    paddingRight: 4,
+    borderRadius: 4,
+    justifyContent: 'center',
+  },
+  issueNumber: {
+    color: 'white',
+    fontSize: 11,
   },
   assignee: {
     fontSize: 24,
@@ -105,6 +127,11 @@ const styles = StyleSheet.create({
   issue: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    marginBottom: 4,
+    alignItems: 'center',
+  },
+  labelListItem: {
+    marginRight: 4,
   }
 });
 

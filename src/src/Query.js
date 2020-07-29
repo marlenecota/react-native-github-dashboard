@@ -66,12 +66,13 @@ class GitHubQuery extends Component {
     });
     return {
       id: issue.id,
+      number: issue.number,
       url: issue.url,
       title: issue.title,
       assignee: assignee,
       url: issue.html_url,
       labels: labels,
-      milestone: milestone
+      milestone: milestone,
     };
   }
 

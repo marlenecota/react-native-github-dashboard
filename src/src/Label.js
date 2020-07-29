@@ -29,7 +29,7 @@ class Label extends Component {
             Linking.openURL(this.props.label.url)
           }
         }}>
-        <View style={{backgroundColor: '#' + this.props.label.color, ...styles.label}}>
+        <View style={{backgroundColor: '#' + this.props.label.color, ...styles.labelContainer}}>
           <Text style={{color: this.getContrastYIQ(this.props.label.color), ...styles.labelText}}>{this.props.label.name}</Text>
         </View>
       </TouchableWithoutFeedback>
@@ -42,13 +42,16 @@ const LabelList = (props) => {
   return (
     <View style={styles.labelList}>
       {labels.map(label => (
-        <Label
-          accessibilityRole='button'
+        <View
           key={label.id}
-          label={label}
-          onPress={(label) => {
-            props.addToFilter(label);
-        }}/>
+          style={styles.labelListItem}>
+          <Label
+            accessibilityRole='button'
+            label={label}
+            onPress={(label) => {
+              props.addToFilter(label);
+          }}/>
+        </View>
       ))}
     </View>
   )
@@ -59,13 +62,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
   },
-  label: {
-    paddingLeft: 4,
-    paddingRight: 4,
+  labelListItem: {
     marginRight: 4,
+    marginBottom: 4,
+  },
+  labelContainer: {
+    paddingLeft: 8,
+    paddingRight: 8,
+    borderRadius: 8,
+    justifyContent: 'center',
   },
   labelText: {
-
+    fontSize: 11,
   },
 });
 
