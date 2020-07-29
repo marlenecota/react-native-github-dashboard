@@ -1,7 +1,7 @@
 import React, {Component} from 'react';
 
 import { IssueList } from './Issue'
-import { LabelList } from './Label'
+import { LabelFilterList } from './Label'
 import { MilestoneList } from './Milestone'
 
 const AssigneeList = (props) => {
@@ -89,15 +89,25 @@ class Page extends Component {
               requiredMilestone: milestone.id,
             });
         }}/>
-        <LabelList
+        <LabelFilterList
           labelsById={labelsById}
+          requiredLabels={this.state.requiredLabels}
           addToFilter={(label) => {
             // TODO: Append to list
-            this.setState({
-              requiredLabels: [label.id],
-            });
+            console.log(`filter to ${label.id}`);
+            if (this.state.requiredLabels == label.id) {
+              this.setState({
+                requiredLabels: [],
+              });
+            } else {
+              this.setState({
+                requiredLabels: [label.id],
+              });
+            }
         }}/>
-        <AssigneeList issuesByAssignee={issuesByAssignee} requiredLabels={this.state.requiredLabels}/>
+        <AssigneeList
+          issuesByAssignee={issuesByAssignee}
+          requiredLabels={this.state.requiredLabels}/>
       </>
     );
   }
