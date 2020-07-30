@@ -73,6 +73,7 @@ class IssueList extends Component {
           aria-level="2" 
           onPress={() => {this.setState({collapsed: !this.state.collapsed})}}>
           <View style={styles.assignee}>
+            <Text style={styles.assigneeIcon}>&#xE77B;</Text>
             <Text
               style={styles.assigneeName}>
               {this.props.assignee}
@@ -147,6 +148,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   labelListItem: {
+    marginRight: 4,
+  },
+  assigneeIcon: {
+    fontFamily: 'Segoe MDL2 Assets',
+    fontSize: 24,
     marginRight: 4,
   },
   expandCollapseIcon: {
