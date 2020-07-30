@@ -13,7 +13,9 @@ const Milestone = (props) => {
       onPress={() => {
         props.onPress(props.milestone);
       }}>
-      <Text>{props.milestone.title}</Text>
+      <View style={styles.milestone}>
+        <Text style={styles.milestoneText}>{props.milestone.title}</Text>
+      </View>
     </TouchableWithoutFeedback>
   )
 }
@@ -23,15 +25,18 @@ const MilestoneList = (props) => {
   return (
     <View style={styles.milestoneList}>
       {milestones.map(milestone => (
-      <Milestone
+      <View
         key={milestone.id}
-        milestone={milestone}
-        onPress={(milestone) => {
-          props.addToFilter(milestone)
-        }}/>
+        style={styles.milestoneListItem}>
+        <Milestone
+          milestone={milestone}
+          onPress={(milestone) => {
+            props.addToFilter(milestone)
+          }}/>
+        </View>
       ))}
     </View>
-  )
+    )
 }
 
 const styles = StyleSheet.create({
@@ -39,6 +44,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
   },
+  milestoneListItem: {
+    marginRight: 4,
+    marginBottom: 4,
+  },
+  milestone: {
+    backgroundColor: 'black',
+    paddingLeft: 4,
+    paddingRight: 4,
+  },
+  milestoneText: {
+    color: 'white',
+  }
 });
 
 export { Milestone, MilestoneList };
