@@ -70,12 +70,14 @@ class Label extends Component {
 
 const LabelFilterList = (props) => {
   let labels = Object.values(props.labelsById).sort((a,b) => (b.count - a.count));
+  let areAnyRequired = props.requiredLabels.length > 0;
+  let areAnyForbidden = props.forbiddenLabels.length > 0;
+
   return (
     <View style={styles.labelList}>
       {labels.map(label => {
         let isRequired = props.requiredLabels.includes(label.id);
         let isForbidden = props.forbiddenLabels.includes(label.id);
-        let areAnyRequired = props.requiredLabels.length > 0;
 
         let backgroundColor = areAnyRequired && !isRequired
           ? desaturateColor(label.color, 0.1)
@@ -110,16 +112,18 @@ const LabelFilterList = (props) => {
             
           </View>
       )})}
-      <TouchableWithoutFeedback
-        onPress={() => {
-          props.resetFilters();
-        }}>
-          <View
-            accessibilityRole='button'
-            style={[styles.labelListItem, styles.resetButton]}>
-            <Text style={styles.resetButtonText}>&#xE7A7;</Text>
-          </View>
-      </TouchableWithoutFeedback>
+      {(areAnyRequired || areAnyForbidden)
+      ? <TouchableWithoutFeedback
+          onPress={() => {
+            props.resetFilters();
+          }}>
+            <View
+              accessibilityRole='button'
+              style={[styles.labelListItem, styles.resetButton]}>
+              <Text style={styles.resetButtonText}>&#xE7A7;</Text>
+            </View>
+        </TouchableWithoutFeedback>
+      : null}
     </View>
   )
 }
