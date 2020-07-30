@@ -46,27 +46,33 @@ class GitHubQuery extends Component {
     if (issue.milestone) {
       milestone.id = issue.milestone.id;
       milestone.title = issue.milestone.title;
-      milestone.dueDate = new Date(issue.milestone.due_on);
+      if (issue.milestone.due_on) {
+        milestone.dueDate = new Date(issue.milestone.due_on);
+      } else {
+        milestone.dueDate = new Date(8640000000000000);
+      }
     } else {
       milestone.id = 0;
       milestone.title = 'unscheduled';
-      milestone.dueDate = new Date(8640000000000000);
+      milestone.dueDate = new Date(-8640000000000000);
     }
     let labels = issue.labels.map(value => {
       return {
         id: value.id,
         name: value.name,
         color: value.color,
+        url: value.url, // TODO: This should be the html url, not the api url
       };
     });
     return {
       id: issue.id,
+      number: issue.number,
       url: issue.url,
       title: issue.title,
       assignee: assignee,
       url: issue.html_url,
       labels: labels,
-      milestone: milestone
+      milestone: milestone,
     };
   }
 

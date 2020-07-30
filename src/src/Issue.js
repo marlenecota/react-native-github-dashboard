@@ -15,11 +15,19 @@ import {
 const Issue = (props) => {
   return (
     <View style={styles.issue}>
-      <TouchableWithoutFeedback onPress={() => {Linking.openURL(props.item.url)}}>
-        <Text style={styles.issueTitle}>{props.item.title}</Text>
+      <TouchableWithoutFeedback
+        accessibilityRole='link'
+        href={props.item.url}
+        onPress={() => {Linking.openURL(props.item.url)}}>
+        <View style={styles.issueNumberContainer}>
+          <Text style={styles.issueNumber}>{props.item.number}</Text>
+        </View>
       </TouchableWithoutFeedback>
+      <Text style={styles.issueTitle}>{props.item.title}</Text>
       {props.item.labels.map(label => (
-        <Label key={label.id} label={label}/>
+        <View style={styles.labelListItem}>
+          <Label key={label.id} label={label}/>
+        </View>
       ))}
     </View>
   );
@@ -60,14 +68,39 @@ class IssueList extends Component {
 
     return (
       <View>
-        <TouchableWithoutFeedback onPress={() => {this.setState({collapsed: !this.state.collapsed})}}>
-          <Text style={styles.assignee}>{this.props.assignee} ({this.props.list.length})</Text>
+        <TouchableWithoutFeedback 
+          accessibilityRole='header'
+          aria-level="2" 
+          onPress={() => {this.setState({collapsed: !this.state.collapsed})}}>
+          <View style={styles.assignee}>
+            <Text
+              style={styles.assigneeName}>
+              {this.props.assignee}
+            </Text>
+            <Text
+              style={styles.assigneeCount}>
+              ({this.props.list.length})
+            </Text>
+            {this.state.collapsed
+            ? <Text style={styles.expandCollapseIcon}>&#xE70E;</Text>
+            : <Text style={styles.expandCollapseIcon}>&#xE70D;</Text>
+            }
+          </View>
         </TouchableWithoutFeedback>
         {!this.state.collapsed && 
         <SectionList
           sections={sortedSections}
-          renderSectionHeader={({section}) => <Text style={styles.milestoneSectionHeader}>{section.milestone.title}</Text>}
-          renderItem={({item}) => <Issue key={item.id} item={item}/>}/>
+          renderSectionHeader={({section}) =>
+            <Text
+              accessibilityRole='header'
+              aria-level="3" 
+              style={styles.milestoneSectionHeader}>{section.milestone.title}
+            </Text>}
+          renderItem={({item}) =>
+            <Issue
+              key={item.id}
+              item={item}>
+            </Issue>}/>
         }
       </View>
     );
@@ -77,11 +110,31 @@ class IssueList extends Component {
 const styles = StyleSheet.create({
   issueTitle: {
     backgroundColor: 'white',
+    marginLeft: 8,
+    marginRight: 8,
+    fontSize: 14,
+  },
+  issueNumberContainer: {
+    backgroundColor: 'grey',
+    paddingLeft: 4,
+    paddingRight: 4,
+    justifyContent: 'center',
+  },
+  issueNumber: {
+    color: 'white',
+    fontSize: 11,
   },
   assignee: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  assigneeName: {
     fontSize: 24,
     fontWeight: '600',
-    color: 'black',
+  },
+  assigneeCount: {
+    fontSize: 14,
+    marginLeft: 8,
   },
   milestoneSectionHeader: {
     fontWeight: '600',
@@ -89,7 +142,18 @@ const styles = StyleSheet.create({
   },
   issue: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 4,
+    alignItems: 'center',
   },
+  labelListItem: {
+    marginRight: 4,
+  },
+  expandCollapseIcon: {
+    fontFamily: 'Segoe MDL2 Assets',
+    fontSize: 10,
+    marginLeft: 4,
+  }
 });
 
 export { Issue, IssueList };
