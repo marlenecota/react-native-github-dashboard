@@ -110,6 +110,16 @@ const LabelFilterList = (props) => {
             
           </View>
       )})}
+      <TouchableWithoutFeedback
+        onPress={() => {
+          props.resetFilters();
+        }}>
+          <View
+            accessibilityRole='button'
+            style={styles.resetButton}>
+            <Text style={styles.resetButtonText}>&#xE7A7;</Text>
+          </View>
+      </TouchableWithoutFeedback>
     </View>
   )
 }
@@ -143,6 +153,19 @@ const styles = StyleSheet.create({
     fontFamily: 'Segoe MDL2 Assets',
     fontSize: 10,
     marginLeft: 4,
+  },
+  resetButton: {
+    paddingLeft: 8,
+    paddingRight: 8,
+    borderRadius: 8,
+    justifyContent: 'center',
+    backgroundColor: 'white',
+    borderColor: 'black',
+    borderWidth: 1,
+  },
+  resetButtonText: {
+    fontFamily: 'Segoe MDL2 Assets',
+    fontSize: 10,
   }
 });
 

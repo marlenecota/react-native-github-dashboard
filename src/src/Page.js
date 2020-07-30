@@ -100,6 +100,26 @@ class Page extends Component {
       return newList;
     }
 
+    const addToLabelFilter = (label) => {
+      console.log(`Require '${label.name}'`);
+      this.setState({
+        requiredLabels: toggleFromList(this.state.requiredLabels, label.id),
+      });
+    }
+    const filterOutLabel = (label) => {
+      console.log(`Forbid '${label.name}'`);
+      this.setState({
+        forbiddenLabels: toggleFromList(this.state.forbiddenLabels, label.id),
+      });
+    }
+    const resetLabelFilters = () => {
+      console.log(`Reset all filters`);
+      this.setState({
+        requiredLabels: [],
+        forbiddenLabels: [],
+      });
+    }
+
     return (
       <>
         <MilestoneList
@@ -113,18 +133,9 @@ class Page extends Component {
           labelsById={labelsById}
           requiredLabels={this.state.requiredLabels}
           forbiddenLabels={this.state.forbiddenLabels}
-          addToFilter={(label) => {
-            console.log(`Require '${label.name}'`);
-            this.setState({
-              requiredLabels: toggleFromList(this.state.requiredLabels, label.id),
-            });
-          }}
-          filterOut={(label) => {
-            console.log(`Forbid '${label.name}'`);
-            this.setState({
-              forbiddenLabels: toggleFromList(this.state.forbiddenLabels, label.id),
-            });
-          }}
+          addToFilter={addToLabelFilter}
+          filterOut={filterOutLabel}
+          resetFilters={resetLabelFilters}
         />
         <AssigneeList
           issuesByAssignee={issuesByAssignee}
