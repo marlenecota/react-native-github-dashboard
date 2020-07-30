@@ -7,6 +7,7 @@ import {
 
 import { RepoUrl } from './RepoUrl'
 import { Page } from './Page'
+import { CollapsableHeader } from './Collapsable'
 
 import AsyncStorage from '@react-native-community/async-storage';
 
@@ -229,20 +230,22 @@ class GitHubQuery extends Component {
   render() {
     return (
       <>
-        <RepoUrl
-          url={this.state.repoUrl}
-          useCache={this.state.useOfflineData}
-          onUrlChanged={url => {
+        <CollapsableHeader header='repo' expanded={false}>
+          <RepoUrl
+            url={this.state.repoUrl}
+            useCache={this.state.useOfflineData}
+            onUrlChanged={url => {
+                this.setState({
+                repoUrl: url,
+              });
+              this.queryAllIssues();}}
+            onUseCacheChanged={useCache => {
               this.setState({
-              repoUrl: url,
-            });
-            this.queryAllIssues();}}
-          onUseCacheChanged={useCache => {
-            this.setState({
-              useOfflineData: useCache,
-            });
-            this.queryAllIssues();
-          }}/>
+                useOfflineData: useCache,
+              });
+              this.queryAllIssues();
+            }}/>
+        </CollapsableHeader>
         <Page issues={this.state.issues}/>
         {(this.state.progress < 1.0) &&
           <View style={styles.loading}>
