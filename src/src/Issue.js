@@ -72,10 +72,20 @@ class IssueList extends Component {
           accessibilityRole='header'
           aria-level="2" 
           onPress={() => {this.setState({collapsed: !this.state.collapsed})}}>
-          <Text
-            style={styles.assignee}>
-            {this.props.assignee} ({this.props.list.length})
-          </Text>
+          <View style={styles.assignee}>
+            <Text
+              style={styles.assigneeName}>
+              {this.props.assignee}
+            </Text>
+            <Text
+              style={styles.assigneeCount}>
+              ({this.props.list.length})
+            </Text>
+            {this.state.collapsed
+            ? <Text style={styles.expandCollapseIcon}>&#xE70E;</Text>
+            : <Text style={styles.expandCollapseIcon}>&#xE70D;</Text>
+            }
+          </View>
         </TouchableWithoutFeedback>
         {!this.state.collapsed && 
         <SectionList
@@ -108,7 +118,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'grey',
     paddingLeft: 4,
     paddingRight: 4,
-    borderRadius: 4,
     justifyContent: 'center',
   },
   issueNumber: {
@@ -116,9 +125,16 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   assignee: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  assigneeName: {
     fontSize: 24,
     fontWeight: '600',
-    color: 'black',
+  },
+  assigneeCount: {
+    fontSize: 14,
+    marginLeft: 8,
   },
   milestoneSectionHeader: {
     fontWeight: '600',
@@ -132,6 +148,11 @@ const styles = StyleSheet.create({
   },
   labelListItem: {
     marginRight: 4,
+  },
+  expandCollapseIcon: {
+    fontFamily: 'Segoe MDL2 Assets',
+    fontSize: 10,
+    marginLeft: 4,
   }
 });
 
