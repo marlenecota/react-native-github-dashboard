@@ -67,7 +67,7 @@ class IssueList extends Component {
     });
 
     return (
-      <View>
+      <View style={styles.issuesByAssignee}>
         <TouchableWithoutFeedback 
           accessibilityRole='header'
           aria-level="2" 
@@ -101,7 +101,11 @@ class IssueList extends Component {
             <Issue
               key={item.id}
               item={item}>
-            </Issue>}/>
+            </Issue>}
+          renderSectionFooter={() =>
+            <View style={styles.milestoneSectionSeparator}/>
+          }
+          />
         }
       </View>
     );
@@ -109,6 +113,9 @@ class IssueList extends Component {
 }
 
 const styles = StyleSheet.create({
+  issuesByAssignee: {
+    marginBottom: 10,
+  },
   issueTitle: {
     backgroundColor: 'white',
     marginLeft: 8,
@@ -140,6 +147,11 @@ const styles = StyleSheet.create({
   milestoneSectionHeader: {
     fontWeight: '600',
     color: 'black',
+    borderBottomWidth: 2,
+    borderBottomColor: 'lightgray',
+  },
+  milestoneSectionSeparator: {
+    minHeight: 10,
   },
   issue: {
     flexDirection: 'row',
