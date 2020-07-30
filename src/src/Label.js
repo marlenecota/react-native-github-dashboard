@@ -116,7 +116,7 @@ const LabelFilterList = (props) => {
         }}>
           <View
             accessibilityRole='button'
-            style={styles.resetButton}>
+            style={[styles.labelListItem, styles.resetButton]}>
             <Text style={styles.resetButtonText}>&#xE7A7;</Text>
           </View>
       </TouchableWithoutFeedback>
@@ -160,12 +160,13 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     justifyContent: 'center',
     backgroundColor: 'white',
-    borderColor: 'black',
+    borderColor: 'gray',
     borderWidth: 1,
   },
   resetButtonText: {
     fontFamily: 'Segoe MDL2 Assets',
     fontSize: 10,
+    alignSelf: 'center',
   }
 });
 
