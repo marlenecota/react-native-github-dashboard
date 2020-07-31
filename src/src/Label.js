@@ -7,6 +7,8 @@ import {
   Linking,
 } from 'react-native';
 
+import { CollapsableHeader } from './Collapsable'
+
 const unpackHexColor = (hexcolor) => {
   hexcolor = hexcolor.replace('#', '');
   let r = parseInt(hexcolor.substr(0,2),16);
@@ -128,6 +130,129 @@ const LabelFilterList = (props) => {
   )
 }
 
+const GroupedLabelFilterList = (props) => {
+  let defaultLabelCategory = 'Other';
+
+  let labelCategoryRegex = '(.+?):';
+
+  // Find potential label categories
+  let labelCategories = Object.values(props.labelsById).reduce((labelCategories, label) => {
+    let matches;
+    if (matches = label.name.match(labelCategoryRegex)) {
+      labelCategories.push(matches[1]);
+    }
+    return labelCategories;
+  }, []);
+
+  // Group the labels by categories
+  let sectionsMap = Object.values(props.labelsById).reduce((groupedByLabelCategory, label) => {
+    let labelCategory = defaultLabelCategory;
+    let matches;
+    if (labelCategories.includes(label.name)) {
+      labelCategory = label.name;
+    } else if (matches = label.name.match('(.+?):')) {
+      labelCategory = matches[1];
+    }
+
+    let group = groupedByLabelCategory[labelCategory];
+    if (group === undefined) {
+      group = groupedByLabelCategory[labelCategory] = {
+        category: labelCategory,
+        data: [],
+      };
+    }
+    group.data.push(label);
+    return groupedByLabelCategory;
+  }, {});
+
+  // Sort labels by descending count, and convert to an array of groups
+  let sections = Object.keys(sectionsMap).map(section => {
+    let fromMap = sectionsMap[section];
+    return {
+      category: fromMap.category,
+      data: fromMap.data.sort((a,b) => b.count - a.count),
+    }});
+  // Sort groups by label 
+  let sortedSections = sections.sort((a,b) => {
+    if (a.category !== b.category) {
+      if ((a.category === defaultLabelCategory)) {
+        return -1;
+      }
+      if ((b.category === defaultLabelCategory)) {
+        return 1;
+      }
+    }
+    return a.category.localeCompare(b.category);
+  });
+
+  let areAnyRequired = props.requiredLabels.length > 0;
+  let areAnyForbidden = props.forbiddenLabels.length > 0;
+
+  return (
+    <View> 
+      {sortedSections.map(section =>
+        <CollapsableHeader
+          key={section.category}
+          header={section.category}
+          horizontal={true}
+          level={4}>
+          {section.data.map((label) => {
+            let isRequired = props.requiredLabels.includes(label.id);
+            let isForbidden = props.forbiddenLabels.includes(label.id);
+
+            let backgroundColor = areAnyRequired && !isRequired
+              ? desaturateColor(label.color, 0.1)
+              : '#' + label.color;
+            let foregroundColor = getContrastYIQ(backgroundColor);
+            return (
+              <View
+                key={label.id}
+                style={styles.labelListItem}>
+                <Label
+                  accessibilityRole='button'
+                  label={label}
+                  backgroundColor={backgroundColor}
+                  foregroundColor={foregroundColor}
+                  onPress={(label) => {
+                    props.addToFilter(label);
+                }}>
+                  <Text style={[styles.labelText, {color: foregroundColor}]}>: {label.count}</Text>
+                  {(isRequired ?
+                    <Text style={[styles.filterIcon, {color: foregroundColor}]}>&#xE71C;</Text> :
+                    null)
+                  }
+                  <TouchableWithoutFeedback
+                    onPress={() => {
+                      props.filterOut(label);
+                    }}>
+                    {isForbidden
+                    ? <Text style={[styles.closeIcon, {color: foregroundColor}]}>&#xE710;</Text>
+                    : <Text style={[styles.closeIcon, {color: foregroundColor}]}>&#xE711;</Text>
+                    }
+                  </TouchableWithoutFeedback>
+                </Label>
+                
+              </View>          
+            )}
+          )}
+        </CollapsableHeader>
+      )}
+      {(areAnyRequired || areAnyForbidden)
+      ? <TouchableWithoutFeedback
+          onPress={() => {
+            props.resetFilters();
+          }}>
+            <View
+              accessibilityRole='button'
+              style={[styles.labelListItem, styles.resetButton]}>
+              <Text style={styles.resetButtonText}>&#xE7A7;</Text>
+            </View>
+        </TouchableWithoutFeedback>
+      : null}
+    </View>
+  )
+}
+
 const styles = StyleSheet.create({
   labelList: {
     flexDirection: 'row',
@@ -174,4 +299,4 @@ const styles = StyleSheet.create({
   }
 });
 
-export { Label, LabelFilterList };
+export { Label, LabelFilterList, GroupedLabelFilterList };

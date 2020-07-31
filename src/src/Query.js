@@ -7,6 +7,7 @@ import {
 
 import { RepoUrl } from './RepoUrl'
 import { Page } from './Page'
+import { CollapsableHeader } from './Collapsable'
 
 import AsyncStorage from '@react-native-community/async-storage';
 
@@ -89,6 +90,35 @@ class GitHubQuery extends Component {
       };
       return linkHeaders;
     }, {});
+  }
+
+  async clearCache() {
+    let keys = [];
+    try {
+      keys = await AsyncStorage.getAllKeys();
+    } catch(e) {
+      console.log('Error getting cache keys');
+      console.log(e);
+
+      try {
+        await AsyncStorage.clear();
+      } catch(e) {
+        console.log('Error clearing all cache');
+        console.log(e);
+      }
+    }
+
+    keys.forEach(async (key) => {
+      try {
+        await AsyncStorage.removeItem(key);
+        console.log(`Removed from cache ${key}`);
+      } catch(e) {
+        console.log(`Error removing ${key}`);
+        console.log(e);
+      }
+    });
+
+    await this.queryAllIssues();
   }
 
   async queryIssues(pageNumber) {
@@ -207,10 +237,17 @@ class GitHubQuery extends Component {
       }
       pagesCompleted++;
       let progress = pagesCompleted / lastPageNumber;
-      this.setState({
-        progress: progress,
-        issues: issues,
-      });
+
+      if (pagesCompleted >= lastPageNumber) {
+        this.setState({
+          progress: progress,
+          issues: issues,
+        });
+      } else {
+        this.setState({
+          progress: progress,
+        });
+      }
     }
 
     processPage(firstPageData);
@@ -229,20 +266,26 @@ class GitHubQuery extends Component {
   render() {
     return (
       <>
-        <RepoUrl
-          url={this.state.repoUrl}
-          useCache={this.state.useOfflineData}
-          onUrlChanged={url => {
+        <CollapsableHeader header='repo' expanded={false}>
+          <RepoUrl
+            url={this.state.repoUrl}
+            useCache={this.state.useOfflineData}
+            clearCache={() => {
+              this.clearCache();
+            }}
+            onUrlChanged={url => {
+                this.setState({
+                repoUrl: url,
+              });
+              this.queryAllIssues();
+            }}
+            onUseCacheChanged={useCache => {
               this.setState({
-              repoUrl: url,
-            });
-            this.queryAllIssues();}}
-          onUseCacheChanged={useCache => {
-            this.setState({
-              useOfflineData: useCache,
-            });
-            this.queryAllIssues();
-          }}/>
+                useOfflineData: useCache,
+              });
+              this.queryAllIssues();
+            }}/>
+        </CollapsableHeader>
         <Page issues={this.state.issues}/>
         {(this.state.progress < 1.0) &&
           <View style={styles.loading}>

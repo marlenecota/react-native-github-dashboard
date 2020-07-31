@@ -1,8 +1,9 @@
 import React, {Component} from 'react';
 
 import { IssueList } from './Issue'
-import { LabelFilterList } from './Label'
+import { GroupedLabelFilterList } from './Label'
 import { MilestoneList } from './Milestone'
+import { CollapsableHeader } from './Collapsable'
 
 const AssigneeList = (props) => {
   let assignees = Object.keys(props.issuesByAssignee).sort((a,b) => {
@@ -122,24 +123,30 @@ class Page extends Component {
 
     return (
       <>
-        <MilestoneList
-          milestonesById={milestonesById}
-          addToFilter={(milestone) => {
-            this.setState({
-              requiredMilestone: milestone.id,
-            });
-        }}/>
-        <LabelFilterList
-          labelsById={labelsById}
-          requiredLabels={this.state.requiredLabels}
-          forbiddenLabels={this.state.forbiddenLabels}
-          addToFilter={addToLabelFilter}
-          filterOut={filterOutLabel}
-          resetFilters={resetLabelFilters}
-        />
-        <AssigneeList
-          issuesByAssignee={issuesByAssignee}
-          requiredLabels={this.state.requiredLabels}/>
+        <CollapsableHeader header="Milestones">
+          <MilestoneList
+            milestonesById={milestonesById}
+            addToFilter={(milestone) => {
+              this.setState({
+                requiredMilestone: milestone.id,
+              });
+          }}/>
+        </CollapsableHeader>
+        <CollapsableHeader header="Labels">
+          <GroupedLabelFilterList
+            labelsById={labelsById}
+            requiredLabels={this.state.requiredLabels}
+            forbiddenLabels={this.state.forbiddenLabels}
+            addToFilter={addToLabelFilter}
+            filterOut={filterOutLabel}
+            resetFilters={resetLabelFilters}
+          />
+        </CollapsableHeader>
+        <CollapsableHeader header="Issues">
+          <AssigneeList
+            issuesByAssignee={issuesByAssignee}
+            requiredLabels={this.state.requiredLabels}/>
+        </CollapsableHeader>
       </>
     );
   }

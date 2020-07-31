@@ -67,12 +67,13 @@ class IssueList extends Component {
     });
 
     return (
-      <View>
+      <View style={styles.issuesByAssignee}>
         <TouchableWithoutFeedback 
           accessibilityRole='header'
           aria-level="2" 
           onPress={() => {this.setState({collapsed: !this.state.collapsed})}}>
           <View style={styles.assignee}>
+            <Text style={styles.assigneeIcon}>&#xE77B;</Text>
             <Text
               style={styles.assigneeName}>
               {this.props.assignee}
@@ -100,7 +101,11 @@ class IssueList extends Component {
             <Issue
               key={item.id}
               item={item}>
-            </Issue>}/>
+            </Issue>}
+          renderSectionFooter={() =>
+            <View style={styles.milestoneSectionSeparator}/>
+          }
+          />
         }
       </View>
     );
@@ -108,6 +113,9 @@ class IssueList extends Component {
 }
 
 const styles = StyleSheet.create({
+  issuesByAssignee: {
+    marginBottom: 10,
+  },
   issueTitle: {
     backgroundColor: 'white',
     marginLeft: 8,
@@ -139,6 +147,11 @@ const styles = StyleSheet.create({
   milestoneSectionHeader: {
     fontWeight: '600',
     color: 'black',
+    borderBottomWidth: 2,
+    borderBottomColor: 'lightgray',
+  },
+  milestoneSectionSeparator: {
+    minHeight: 10,
   },
   issue: {
     flexDirection: 'row',
@@ -147,6 +160,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   labelListItem: {
+    marginRight: 4,
+  },
+  assigneeIcon: {
+    fontFamily: 'Segoe MDL2 Assets',
+    fontSize: 24,
     marginRight: 4,
   },
   expandCollapseIcon: {
