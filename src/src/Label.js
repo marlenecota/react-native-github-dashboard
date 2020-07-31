@@ -131,18 +131,20 @@ const LabelFilterList = (props) => {
 }
 
 const GroupedLabelFilterList = (props) => {
-  let defaultGroupId = 'Other';
+  let defaultLabelCategory = 'Other';
+
+  // Group the labels by categories
   let sectionsMap = Object.values(props.labelsById).reduce((groupedByLabelCategory, label) => {
-    let groupId = defaultGroupId;
+    let labelCategory = defaultLabelCategory;
     let matches;
     if (matches = label.name.match('(.+?):')) {
-      groupId = matches[1];
+      labelCategory = matches[1];
     }
 
-    let group = groupedByLabelCategory[groupId];
+    let group = groupedByLabelCategory[labelCategory];
     if (group === undefined) {
-      group = groupedByLabelCategory[groupId] = {
-        category: groupId,
+      group = groupedByLabelCategory[labelCategory] = {
+        category: labelCategory,
         data: [],
       };
     }
@@ -150,13 +152,20 @@ const GroupedLabelFilterList = (props) => {
     return groupedByLabelCategory;
   }, {});
 
-  let sections = Object.keys(sectionsMap).map(section => sectionsMap[section]);
+  // Sort labels by descending count, and convert to an array of groups
+  let sections = Object.keys(sectionsMap).map(section => {
+    let fromMap = sectionsMap[section];
+    return {
+      category: fromMap.category,
+      data: fromMap.data.sort((a,b) => b.count - a.count),
+    }});
+  // Sort groups by label 
   let sortedSections = sections.sort((a,b) => {
     if (a.category !== b.category) {
-      if ((a.category === defaultGroupId)) {
+      if ((a.category === defaultLabelCategory)) {
         return -1;
       }
-      if ((b.category === defaultGroupId)) {
+      if ((b.category === defaultLabelCategory)) {
         return 1;
       }
     }
@@ -172,9 +181,8 @@ const GroupedLabelFilterList = (props) => {
         <CollapsableHeader
           key={section.category}
           header={section.category}
-          level={4}
-          expanded={section.category !== defaultGroupId}>
-          <View style={styles.labelList}>
+          horizontal={true}
+          level={4}>
           {section.data.map((label) => {
             let isRequired = props.requiredLabels.includes(label.id);
             let isForbidden = props.forbiddenLabels.includes(label.id);
@@ -214,7 +222,6 @@ const GroupedLabelFilterList = (props) => {
               </View>          
             )}
           )}
-          </View>
         </CollapsableHeader>
       )}
       {(areAnyRequired || areAnyForbidden)
