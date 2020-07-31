@@ -133,11 +133,24 @@ const LabelFilterList = (props) => {
 const GroupedLabelFilterList = (props) => {
   let defaultLabelCategory = 'Other';
 
+  let labelCategoryRegex = '(.+?):';
+
+  // Find potential label categories
+  let labelCategories = Object.values(props.labelsById).reduce((labelCategories, label) => {
+    let matches;
+    if (matches = label.name.match(labelCategoryRegex)) {
+      labelCategories.push(matches[1]);
+    }
+    return labelCategories;
+  }, []);
+
   // Group the labels by categories
   let sectionsMap = Object.values(props.labelsById).reduce((groupedByLabelCategory, label) => {
     let labelCategory = defaultLabelCategory;
     let matches;
-    if (matches = label.name.match('(.+?):')) {
+    if (labelCategories.includes(label.name)) {
+      labelCategory = label.name;
+    } else if (matches = label.name.match('(.+?):')) {
       labelCategory = matches[1];
     }
 
