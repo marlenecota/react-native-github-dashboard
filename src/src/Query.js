@@ -92,6 +92,26 @@ class GitHubQuery extends Component {
     }, {});
   }
 
+  async clearCache() {
+    let keys = [];
+    try {
+      keys = await AsyncStorage.getAllKeys();
+    } catch(e) {
+      console.log('Error getting cache keys');
+    }
+
+    keys.forEach(async (key) => {
+      try {
+        await AsyncStorage.removeItem(key);
+        console.log(`Removed from cache ${key}`);
+      } catch(e) {
+        console.log(`Error removing ${key}`);
+      }
+    });
+
+    await queryAllIssues();
+  }
+
   async queryIssues(pageNumber) {
     let uri = `${this.state.repoUrl}/issues?state=open&sort=updated&direction=desc&page=${pageNumber}`;
 
@@ -234,6 +254,7 @@ class GitHubQuery extends Component {
           <RepoUrl
             url={this.state.repoUrl}
             useCache={this.state.useOfflineData}
+            clearCache={this.clearCache}
             onUrlChanged={url => {
                 this.setState({
                 repoUrl: url,
