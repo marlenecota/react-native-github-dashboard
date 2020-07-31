@@ -98,6 +98,14 @@ class GitHubQuery extends Component {
       keys = await AsyncStorage.getAllKeys();
     } catch(e) {
       console.log('Error getting cache keys');
+      console.log(e);
+
+      try {
+        await AsyncStorage.clear();
+      } catch(e) {
+        console.log('Error clearing all cache');
+        console.log(e);
+      }
     }
 
     keys.forEach(async (key) => {
@@ -106,10 +114,11 @@ class GitHubQuery extends Component {
         console.log(`Removed from cache ${key}`);
       } catch(e) {
         console.log(`Error removing ${key}`);
+        console.log(e);
       }
     });
 
-    await queryAllIssues();
+    await this.queryAllIssues();
   }
 
   async queryIssues(pageNumber) {
@@ -228,10 +237,17 @@ class GitHubQuery extends Component {
       }
       pagesCompleted++;
       let progress = pagesCompleted / lastPageNumber;
-      this.setState({
-        progress: progress,
-        issues: issues,
-      });
+
+      if (pagesCompleted >= lastPageNumber) {
+        this.setState({
+          progress: progress,
+          issues: issues,
+        });
+      } else {
+        this.setState({
+          progress: progress,
+        });
+      }
     }
 
     processPage(firstPageData);
@@ -254,12 +270,15 @@ class GitHubQuery extends Component {
           <RepoUrl
             url={this.state.repoUrl}
             useCache={this.state.useOfflineData}
-            clearCache={this.clearCache}
+            clearCache={() => {
+              this.clearCache();
+            }}
             onUrlChanged={url => {
                 this.setState({
                 repoUrl: url,
               });
-              this.queryAllIssues();}}
+              this.queryAllIssues();
+            }}
             onUseCacheChanged={useCache => {
               this.setState({
                 useOfflineData: useCache,
