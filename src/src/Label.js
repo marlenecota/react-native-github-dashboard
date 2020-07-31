@@ -7,6 +7,8 @@ import {
   Linking,
 } from 'react-native';
 
+import { CollapsableHeader } from './Collapsable'
+
 const unpackHexColor = (hexcolor) => {
   hexcolor = hexcolor.replace('#', '');
   let r = parseInt(hexcolor.substr(0,2),16);
@@ -128,6 +130,109 @@ const LabelFilterList = (props) => {
   )
 }
 
+const GroupedLabelFilterList = (props) => {
+  let defaultGroupId = 'Other';
+  let sectionsMap = Object.values(props.labelsById).reduce((groupedByLabelCategory, label) => {
+    let groupId = defaultGroupId;
+    let matches;
+    if (matches = label.name.match('(.+?):')) {
+      groupId = matches[1];
+    }
+
+    let group = groupedByLabelCategory[groupId];
+    if (group === undefined) {
+      group = groupedByLabelCategory[groupId] = {
+        category: groupId,
+        data: [],
+      };
+    }
+    group.data.push(label);
+    return groupedByLabelCategory;
+  }, {});
+
+  let sections = Object.keys(sectionsMap).map(section => sectionsMap[section]);
+  let sortedSections = sections.sort((a,b) => {
+    if (a.category !== b.category) {
+      if ((a.category === defaultGroupId)) {
+        return -1;
+      }
+      if ((b.category === defaultGroupId)) {
+        return 1;
+      }
+    }
+    return a.category.localeCompare(b.category);
+  });
+
+  let areAnyRequired = props.requiredLabels.length > 0;
+  let areAnyForbidden = props.forbiddenLabels.length > 0;
+
+  return (
+    <View> 
+      {sortedSections.map(section =>
+        <CollapsableHeader
+          key={section.category}
+          header={section.category}
+          level={4}
+          expanded={section.category !== defaultGroupId}>
+          <View style={styles.labelList}>
+          {section.data.map((label) => {
+            let isRequired = props.requiredLabels.includes(label.id);
+            let isForbidden = props.forbiddenLabels.includes(label.id);
+
+            let backgroundColor = areAnyRequired && !isRequired
+              ? desaturateColor(label.color, 0.1)
+              : '#' + label.color;
+            let foregroundColor = getContrastYIQ(backgroundColor);
+            return (
+              <View
+                key={label.id}
+                style={styles.labelListItem}>
+                <Label
+                  accessibilityRole='button'
+                  label={label}
+                  backgroundColor={backgroundColor}
+                  foregroundColor={foregroundColor}
+                  onPress={(label) => {
+                    props.addToFilter(label);
+                }}>
+                  <Text style={[styles.labelText, {color: foregroundColor}]}>: {label.count}</Text>
+                  {(isRequired ?
+                    <Text style={[styles.filterIcon, {color: foregroundColor}]}>&#xE71C;</Text> :
+                    null)
+                  }
+                  <TouchableWithoutFeedback
+                    onPress={() => {
+                      props.filterOut(label);
+                    }}>
+                    {isForbidden
+                    ? <Text style={[styles.closeIcon, {color: foregroundColor}]}>&#xE710;</Text>
+                    : <Text style={[styles.closeIcon, {color: foregroundColor}]}>&#xE711;</Text>
+                    }
+                  </TouchableWithoutFeedback>
+                </Label>
+                
+              </View>          
+            )}
+          )}
+          </View>
+        </CollapsableHeader>
+      )}
+      {(areAnyRequired || areAnyForbidden)
+      ? <TouchableWithoutFeedback
+          onPress={() => {
+            props.resetFilters();
+          }}>
+            <View
+              accessibilityRole='button'
+              style={[styles.labelListItem, styles.resetButton]}>
+              <Text style={styles.resetButtonText}>&#xE7A7;</Text>
+            </View>
+        </TouchableWithoutFeedback>
+      : null}
+    </View>
+  )
+}
+
 const styles = StyleSheet.create({
   labelList: {
     flexDirection: 'row',
@@ -174,4 +279,4 @@ const styles = StyleSheet.create({
   }
 });
 
-export { Label, LabelFilterList };
+export { Label, LabelFilterList, GroupedLabelFilterList };

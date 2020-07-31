@@ -1,7 +1,7 @@
 import React, {Component} from 'react';
 
 import { IssueList } from './Issue'
-import { LabelFilterList } from './Label'
+import { GroupedLabelFilterList } from './Label'
 import { MilestoneList } from './Milestone'
 import { CollapsableHeader } from './Collapsable'
 
@@ -133,7 +133,7 @@ class Page extends Component {
           }}/>
         </CollapsableHeader>
         <CollapsableHeader header="Labels">
-          <LabelFilterList
+          <GroupedLabelFilterList
             labelsById={labelsById}
             requiredLabels={this.state.requiredLabels}
             forbiddenLabels={this.state.forbiddenLabels}
