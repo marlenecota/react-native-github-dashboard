@@ -3,6 +3,7 @@ import {
   StyleSheet,
   View,
   Text,
+  TouchableHighlight,
   TouchableWithoutFeedback,
   Linking,
   SectionList,
@@ -15,14 +16,14 @@ import {
 const Issue = (props) => {
   return (
     <View style={styles.issue}>
-      <TouchableWithoutFeedback
+      <TouchableHighlight
         accessibilityRole='link'
         href={props.item.url}
         onPress={() => {Linking.openURL(props.item.url)}}>
         <View style={styles.issueNumberContainer}>
           <Text style={styles.issueNumber}>{props.item.number}</Text>
         </View>
-      </TouchableWithoutFeedback>
+      </TouchableHighlight>
       <Text style={styles.issueTitle}>{props.item.title}</Text>
       {props.item.labels.map(label => (
         <View style={styles.labelListItem}>
@@ -123,13 +124,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   issueNumberContainer: {
-    backgroundColor: 'grey',
+    backgroundColor: 'lightgrey',
     paddingLeft: 4,
     paddingRight: 4,
     justifyContent: 'center',
   },
   issueNumber: {
-    color: 'white',
     fontSize: 11,
   },
   assignee: {
@@ -147,8 +147,7 @@ const styles = StyleSheet.create({
   milestoneSectionHeader: {
     fontWeight: '600',
     color: 'black',
-    borderBottomWidth: 2,
-    borderBottomColor: 'lightgray',
+    textDecorationLine: 'underline',
   },
   milestoneSectionSeparator: {
     minHeight: 10,
