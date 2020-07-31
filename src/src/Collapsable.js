@@ -20,8 +20,8 @@ const CollapsableHeader = (props) => {
 
   if (props.horizontal) {
     let expandIcon = expanded
-    ? <Text style={[headerStyle, styles.expandCollapseIcon]}>&#xE76C;</Text>
-    : <Text style={[headerStyle, styles.expandCollapseIcon]}>&#xE76B;</Text>;
+    ? <Text style={[headerStyle, styles.expandCollapseIcon]}>&#xE76B;</Text>
+    : <Text style={[headerStyle, styles.expandCollapseIcon]}>&#xE76C;</Text>;
 
     return (
       <View style={styles.horizontalCollapsable}>
@@ -39,8 +39,8 @@ const CollapsableHeader = (props) => {
     );
   } else {
     let expandIcon = expanded
-    ? <Text style={[headerStyle, styles.expandCollapseIcon]}>&#xE70D;</Text>
-    : <Text style={[headerStyle, styles.expandCollapseIcon]}>&#xE70E;</Text>;
+    ? <Text style={[headerStyle, styles.expandCollapseIcon]}>&#xE70E;</Text>
+    : <Text style={[headerStyle, styles.expandCollapseIcon]}>&#xE70D;</Text>;
 
     return (
       <>
@@ -78,15 +78,13 @@ const styles = StyleSheet.create({
     fontSize: 24,
   },
   h2: {
-    fontSize: 20,
+    fontSize: 22,
   },
   h3: {
-    fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: 18,
   },
   h4: {
-    fontWeight: 'bold',
-    fontSize: 11,
+    fontSize: 14,
   }
 });
 
