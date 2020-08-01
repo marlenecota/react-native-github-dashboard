@@ -62,7 +62,10 @@ class Label extends Component {
           }
         }}>
         <View style={[styles.labelContainer, {backgroundColor: backgroundColor}]}>
-          <Text style={[styles.labelText, {color: foregroundColor}]}>{this.props.label.name}</Text>
+          <Text
+            style={[styles.labelText, {color: foregroundColor}]}>
+            {this.props.label.displayName ?? this.props.label.name}
+          </Text>
           {this.props.children}
         </View>
       </TouchableWithoutFeedback>
@@ -147,11 +150,13 @@ const GroupedLabelFilterList = (props) => {
   // Group the labels by categories
   let sectionsMap = Object.values(props.labelsById).reduce((groupedByLabelCategory, label) => {
     let labelCategory = defaultLabelCategory;
+    let displayName = label.name;
     let matches;
     if (labelCategories.includes(label.name)) {
-      labelCategory = label.name;
-    } else if (matches = label.name.match('(.+?):')) {
+      labelCategory = displayName = label.name;
+    } else if (matches = label.name.match('(.+?)\w*:\w*(.+)')) {
       labelCategory = matches[1];
+      displayName = matches[2];
     }
 
     let group = groupedByLabelCategory[labelCategory];
@@ -161,7 +166,7 @@ const GroupedLabelFilterList = (props) => {
         data: [],
       };
     }
-    group.data.push(label);
+    group.data.push({displayName, ...label});
     return groupedByLabelCategory;
   }, {});
 
@@ -189,7 +194,7 @@ const GroupedLabelFilterList = (props) => {
   let areAnyForbidden = props.forbiddenLabels.length > 0;
 
   return (
-    <View> 
+    <View style={{alignItems: 'flex-start'}}> 
       {sortedSections.map(section =>
         <CollapsableHeader
           key={section.category}
@@ -204,6 +209,7 @@ const GroupedLabelFilterList = (props) => {
               ? desaturateColor(label.color, 0.1)
               : '#' + label.color;
             let foregroundColor = getContrastYIQ(backgroundColor);
+
             return (
               <View
                 key={label.id}
@@ -264,8 +270,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   labelContainer: {
-    paddingLeft: 8,
-    paddingRight: 8,
+    paddingLeft: 4,
+    paddingRight: 4,
     borderRadius: 8,
     justifyContent: 'center',
     flexDirection: 'row',
