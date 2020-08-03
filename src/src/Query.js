@@ -11,6 +11,8 @@ import { CollapsableHeader } from './Collapsable'
 
 import AsyncStorage from '@react-native-community/async-storage';
 
+import {name as appName} from '../app.json';
+
 const offlineData = [
   require('../offline/page1.json'),
   require('../offline/page2.json'),
@@ -80,6 +82,10 @@ class GitHubQuery extends Component {
   parseLinkHeader(request) {
     let header = request.getResponseHeader("link");
 
+    if (!header) {
+      console.warn('Missing link header');
+      return {};
+    }
     let matches = [...header.matchAll(/<(.+?)page=(\d+)>;\s*rel="(\w+)",*/g)];
 
     return matches.reduce((linkHeaders, match) => {
@@ -121,6 +127,29 @@ class GitHubQuery extends Component {
     await this.queryAllIssues();
   }
 
+  isPageDataValid(pageData) {
+    if (pageData === undefined) {
+      console.warn(`No page data`);
+      return false;
+    } 
+    if (pageData.data === undefined) {
+      console.warn(`Malformed page data`);
+      console.log(pageData);
+      return false;
+    }
+    if (!Array.isArray(pageData.data)) {
+      console.warn('Non-array page data');
+      console.log(pageData);
+      return false;
+    }
+    if (pageData.data.length === 0) {
+      console.warn('Empty page data');
+      console.log(pageData);
+      return false;
+    }
+    return true;
+  }
+
   async queryIssues(pageNumber) {
     let uri = `${this.state.repoUrl}/issues?state=open&sort=updated&direction=desc&page=${pageNumber}`;
 
@@ -136,12 +165,18 @@ class GitHubQuery extends Component {
       try {
         if (storedValue !== null) {
           let storedJSONValue = JSON.parse(storedValue)
-          console.log(`Using cached value for ${pageNumber}: ${uri}`);
-          resolve(storedJSONValue);
-          return;
+          console.log(`Found cached value for ${pageNumber}: ${uri}`);
+
+          if (this.isPageDataValid(storedJSONValue)) {
+            resolve(storedJSONValue);
+            return;
+          } else {
+            console.warn(`Invalid cached value for ${pageNumber}`);
+            console.log(storedValue);
+          }
         }
       } catch(e) {
-        console.log(`Error parsing cached value for ${pageNumber}`);
+        console.warn(`Error parsing cached value for ${pageNumber}`);
         console.log(e);
         console.log(storedValue);
       }
@@ -179,7 +214,7 @@ class GitHubQuery extends Component {
           uri,
           true,
         );
-        request.setRequestHeader('User-Agent', 'whatever');
+        request.setRequestHeader('User-Agent', appName);
         request.send();
       }
     });
@@ -203,33 +238,21 @@ class GitHubQuery extends Component {
       return;
     }
 
-    const isPageDataValid = (pageData) => {
-      if (pageData === undefined) {
-        console.log(`No page data`);
-        return false;
-      } 
-      if (pageData.data === undefined || pageData.data.length === 0) {
-        console.log(`Malformed page data`);
-        console.log(pageData);
-        return false;
-      }
-      return true;
-    }
-    if (!isPageDataValid(firstPageData)) {
+    if (!this.isPageDataValid(firstPageData)) {
       return;
     } 
 
-    let lastPageNumber = firstPageData.linkHeaders.last.pageNumber;
+    let lastPageNumber = firstPageData.linkHeaders.last ? firstPageData.linkHeaders.last.pageNumber: firstPageNumber;
     console.log(`Last page # is ${lastPageNumber}`);
 
     let pagesCompleted = 0;
 
     const processPage = (pageData) => {
-      if (isPageDataValid(pageData)) {
+      if (this.isPageDataValid(pageData)) {
         let pageNumber;
         if (pageData.linkHeaders.next) {
           pageNumber = parseInt(pageData.linkHeaders.next.pageNumber) - 1;
-        } else {
+        } else if (pageData.linkHeaders.prev) {
           pageNumber = parseInt(pageData.linkHeaders.prev.pageNumber) + 1;
         }
         console.log(`Processing page #${pageNumber}`);
@@ -276,14 +299,12 @@ class GitHubQuery extends Component {
             onUrlChanged={url => {
                 this.setState({
                 repoUrl: url,
-              });
-              this.queryAllIssues();
+              }, () => this.queryAllIssues());
             }}
             onUseCacheChanged={useCache => {
               this.setState({
                 useOfflineData: useCache,
-              });
-              this.queryAllIssues();
+              }, () => this.queryAllIssues());
             }}/>
         </CollapsableHeader>
         <Page issues={this.state.issues}/>
