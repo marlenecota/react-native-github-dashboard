@@ -125,6 +125,7 @@ class Page extends Component {
         <CollapsableHeader header="Milestones">
           <MilestoneList
             milestonesById={milestonesById}
+            requiredMilestone={this.state.requiredMilestone}
             addToFilter={(milestone) => {
               this.setState({
                 requiredMilestone: milestone.title,
