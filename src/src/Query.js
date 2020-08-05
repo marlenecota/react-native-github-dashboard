@@ -5,7 +5,7 @@ import {
   StyleSheet,
 } from 'react-native';
 
-import { RepoUrl } from './RepoUrl'
+import { RepoUrls } from './RepoUrl'
 import { Page } from './Page'
 import { CollapsableHeader } from './Collapsable'
 
@@ -34,7 +34,10 @@ class GitHubQuery extends Component {
     super(props);
     this.state = {
       useOfflineData: true,
-      repoUrl: 'https://api.github.com/repos/microsoft/react-native-windows',
+      repoUrls: [
+        'https://api.github.com/repos/microsoft/react-native-windows',
+        'https://api.github.com/repos/microsoft/react-native-windows-samples',
+      ],
       issues: [],
     };
   }
@@ -150,8 +153,8 @@ class GitHubQuery extends Component {
     return true;
   }
 
-  async queryIssues(pageNumber) {
-    let uri = `${this.state.repoUrl}/issues?state=open&sort=updated&direction=desc&page=${pageNumber}`;
+  async queryIssues(repoUrl, pageNumber) {
+    let uri = `${repoUrl}/issues?state=open&sort=updated&direction=desc&page=${pageNumber}`;
 
     let storedValue = undefined;
     if (this.state.useOfflineData) {
@@ -191,6 +194,17 @@ class GitHubQuery extends Component {
         request.onload = () => {
           console.log(`Querying for ${pageNumber}: ${uri} (useOfflineData=${this.state.useOfflineData})`);
 
+          let parsedData;
+          try {
+            parsedData = JSON.parse(request.responseText);
+          } catch (e) {
+            console.warn(`Error parsing json for ${pageNumber}`);
+            console.log(e);
+            console.log(request.responseText);
+            reject();
+            return;
+          }
+
           let pageData = {
             data: JSON.parse(request.responseText),
             linkHeaders: this.parseLinkHeader(request)
@@ -221,31 +235,14 @@ class GitHubQuery extends Component {
   }
 
   async queryAllIssues() {
-    let firstPageNumber = 1;
-    let issues = [];
-
     this.setState({
-      issues: issues,
+      issues: [],
       progress: 0.0,
     });
 
-    console.log(`Trying first page #${firstPageNumber}`);
-    let firstPageData = undefined;
-    try {
-      firstPageData = await this.queryIssues(firstPageNumber);
-    } catch {
-      console.log(`Error getting first page`);
-      return;
-    }
-
-    if (!this.isPageDataValid(firstPageData)) {
-      return;
-    } 
-
-    let lastPageNumber = firstPageData.linkHeaders.last ? firstPageData.linkHeaders.last.pageNumber: firstPageNumber;
-    console.log(`Last page # is ${lastPageNumber}`);
-
+    let issues = [];
     let pagesCompleted = 0;
+    let totalPages = 0;
 
     const processPage = (pageData) => {
       if (this.isPageDataValid(pageData)) {
@@ -255,13 +252,13 @@ class GitHubQuery extends Component {
         } else if (pageData.linkHeaders.prev) {
           pageNumber = parseInt(pageData.linkHeaders.prev.pageNumber) + 1;
         }
-        console.log(`Processing page #${pageNumber}`);
+        console.log(`Processing page #${pageNumber} (${pagesCompleted} of ${totalPages})`);
         issues = issues.concat(pageData.data.map(current => this.processIssue(current)));
       }
       pagesCompleted++;
-      let progress = pagesCompleted / lastPageNumber;
-
-      if (pagesCompleted >= lastPageNumber) {
+      let progress = pagesCompleted / totalPages;
+  
+      if (pagesCompleted >= totalPages) {
         this.setState({
           progress: progress,
           issues: issues,
@@ -273,12 +270,59 @@ class GitHubQuery extends Component {
       }
     }
 
+    console.log('Querying urls:');
+    console.log(this.state.repoUrls);
+
+    // Query for the first page of data, which has first/last page information
+    // (so we can display accurate progress)
+    let firstPageData = [];
+    for (let index = 0; index < this.state.repoUrls.length; index++) {
+      let firstPage = await this.queryFirstPage(this.state.repoUrls[index]);
+      console.log(firstPage);
+      firstPageData.push(firstPage);
+      totalPages += firstPage.lastPageNumber;
+    }
+
+    // Once we have that data, go through it and actually add each page's payload to the list of issues
+    for (let index = 0; index < this.state.repoUrls.length; index++) {
+      let firstPage = firstPageData[index];
+      await this.queryAllPages(this.state.repoUrls[index], firstPage.lastPageNumber, firstPage.firstPageData, (pageData) => {
+        processPage(pageData);
+      });
+    }
+  }
+
+  async queryFirstPage(repoUrl) {
+    console.log(`Trying first page for ${repoUrl}`);
+    let firstPageData = undefined;
+    try {
+      firstPageData = await this.queryIssues(repoUrl);
+    } catch {
+      console.log(`Error getting first page`);
+      return {lastPageNumber: 0, firstPageData: {}};
+    }
+
+    if (!this.isPageDataValid(firstPageData)) {
+      return {lastPageNumber: 0, firstPageData: {}};
+    } 
+
+    let lastPageNumber = firstPageData.linkHeaders.last ? parseInt(firstPageData.linkHeaders.last.pageNumber): 1;
+    console.log(`Last page # is ${lastPageNumber}`);
+    return {lastPageNumber, firstPageData};
+  }
+
+  async queryAllPages(repoUrl, lastPageNumber, firstPageData, processPage) {
+    console.log(`Querying all pages for ${repoUrl}`);
+
+    // We already have the data for the first page
     processPage(firstPageData);
 
     // Go fetch all the remaining pages in parallel
-    for (let parallelPageNumber = firstPageNumber + 1; parallelPageNumber <= lastPageNumber; parallelPageNumber++) {
-      console.log(`Querying page #${parallelPageNumber}`);
-      this.queryIssues(parallelPageNumber).then(processPage);
+    for (let parallelPageNumber = 2; parallelPageNumber <= lastPageNumber; parallelPageNumber++) {
+      console.log(`Querying page ${parallelPageNumber}/${lastPageNumber} for ${repoUrl}`);
+      this.queryIssues(repoUrl, parallelPageNumber).then((result) => {
+        processPage(result);
+      });
     }
   }
 
@@ -290,15 +334,15 @@ class GitHubQuery extends Component {
     return (
       <>
         <CollapsableHeader header='repo' expanded={false}>
-          <RepoUrl
-            url={this.state.repoUrl}
+          <RepoUrls
+            urls={this.state.repoUrls}
             useCache={this.state.useOfflineData}
             clearCache={() => {
               this.clearCache();
             }}
-            onUrlChanged={url => {
-                this.setState({
-                repoUrl: url,
+            onUrlsChanged={urls => {
+              this.setState({
+                repoUrls: urls,
               }, () => this.queryAllIssues());
             }}
             onUseCacheChanged={useCache => {
