@@ -24,14 +24,13 @@ class Page extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      requiredMilestone: 0,
+      requiredMilestone: undefined,
       requiredLabels: [],
       forbiddenLabels: [],
     };
   }
 
-  countById(collection, item) {
-    let id = item.id;
+  countById(collection, id, item) {
     let existing = collection[id];
     if (!existing) {
       existing = collection[id] = item;
@@ -72,7 +71,7 @@ class Page extends Component {
         return forbiddenLabelsMatched;
       }, 0);
 
-      let milestonesMatched = this.state.requiredMilestone == issue.milestone.id;
+      let milestonesMatched = this.state.requiredMilestone == issue.milestone.title;
 
       if ((forbiddenLabelsMatched == 0) && 
          (!haveRequiredLabels || requiredLabelsMatched) &&
@@ -81,11 +80,11 @@ class Page extends Component {
       }
 
       issue.labels.forEach(label => {
-        this.countById(labelsById, label);
+        this.countById(labelsById, label.id, label);
       });
 
       if (issue.milestone.id) {
-        this.countById(milestonesById, issue.milestone);
+        this.countById(milestonesById, issue.milestone.title, issue.milestone);
       }
     });
 
@@ -128,7 +127,7 @@ class Page extends Component {
             milestonesById={milestonesById}
             addToFilter={(milestone) => {
               this.setState({
-                requiredMilestone: milestone.id,
+                requiredMilestone: milestone.title,
               });
           }}/>
         </CollapsableHeader>

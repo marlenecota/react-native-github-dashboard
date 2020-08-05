@@ -26,7 +26,7 @@ const MilestoneList = (props) => {
     <View style={styles.milestoneList}>
       {milestones.map(milestone => (
       <View
-        key={milestone.id}
+        key={milestone.title}
         style={styles.milestoneListItem}>
         <Milestone
           milestone={milestone}
