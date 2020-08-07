@@ -103,7 +103,7 @@ class GitHubQuery extends Component {
     keys.forEach(async (key) => {
       try {
         await AsyncStorage.removeItem(key);
-        console.log(`Removed from cache ${key}`);
+        console.info(`Removed from cache ${key}`);
       } catch(e) {
         console.log(`Error removing ${key}`);
         console.log(e);
@@ -150,7 +150,7 @@ class GitHubQuery extends Component {
       try {
         if (storedValue !== null) {
           let storedJSONValue = JSON.parse(storedValue);
-          console.log(`Found cached value for ${pageId}`);
+          console.info(`Found cached value for ${pageId}`);
 
           if (this.isPageDataValid(storedJSONValue)) {
             resolve(storedJSONValue);
@@ -168,7 +168,7 @@ class GitHubQuery extends Component {
 
       let request = new XMLHttpRequest();
       request.onload = () => {
-        console.log(`Handling query results for ${pageId}`);
+        console.info(`Handling query results for ${pageId}`);
         let parsedData;
         try {
           parsedData = JSON.parse(request.responseText);
@@ -190,7 +190,7 @@ class GitHubQuery extends Component {
         try {
           AsyncStorage.setItem(pageId, JSON.stringify(pageData)).then(
             () => {
-              console.log(`Saved cached value for ${pageId}`);
+              console.info(`Saved cached value for ${pageId}`);
             }, (e) => {
               console.log(`Error caching value for ${pageId}`);
               console.log(e);
@@ -210,13 +210,14 @@ class GitHubQuery extends Component {
         uri,
         true,
       );
-      console.log(`Sending web request for ${pageId}: ${uri}`);
+      console.info(`Sending web request for ${pageId}: ${uri}`);
       request.setRequestHeader('User-Agent', appName);
       request.send();
     });
   }
 
   async queryAllIssues() {
+    console.time("queryAllIssues");
     this.setState({
       issues: [],
       progress: 0.0,
@@ -234,7 +235,7 @@ class GitHubQuery extends Component {
         } else if (pageData.linkHeaders.prev) {
           pageNumber = parseInt(pageData.linkHeaders.prev.pageNumber) + 1;
         }
-        console.log(`Processing page #${pageNumber} (${pagesCompleted} of ${totalPages})`);
+        console.info(`Processing page #${pageNumber} (${pagesCompleted} of ${totalPages})`);
         let pageIssues = pageData.data.map(current => this.processIssue(current));
 
         // Build a lookup table of issue ids
@@ -264,6 +265,7 @@ class GitHubQuery extends Component {
       let progress = pagesCompleted / totalPages;
   
       if (pagesCompleted >= totalPages) {
+        console.timeEnd("queryAllIssues");
         this.setState({
           progress: progress,
           issues: issues,
@@ -275,15 +277,14 @@ class GitHubQuery extends Component {
       }
     }
 
-    console.log('Querying urls:');
-    console.log(this.state.repoUrls);
+    console.info('Querying urls:');
+    console.info(this.state.repoUrls);
 
     // Query for the first page of data, which has first/last page information
     // (so we can display accurate progress)
     let firstPageData = [];
     for (let index = 0; index < this.state.repoUrls.length; index++) {
       let firstPage = await this.queryFirstPage(this.state.repoUrls[index]);
-      console.log(firstPage);
       firstPageData.push(firstPage);
       totalPages += firstPage.lastPageNumber;
     }
@@ -298,7 +299,7 @@ class GitHubQuery extends Component {
   }
 
   async queryFirstPage(repoUrl) {
-    console.log(`Trying first page for ${repoUrl}`);
+    console.info(`Trying first page for ${repoUrl}`);
     let firstPageData = undefined;
     try {
       firstPageData = await this.queryIssues(repoUrl, 1);
@@ -312,19 +313,19 @@ class GitHubQuery extends Component {
     } 
 
     let lastPageNumber = firstPageData.linkHeaders.last ? parseInt(firstPageData.linkHeaders.last.pageNumber): 1;
-    console.log(`Last page # is ${lastPageNumber}`);
+    console.info(`Last page # is ${lastPageNumber}`);
     return {lastPageNumber, firstPageData};
   }
 
   async queryAllPages(repoUrl, lastPageNumber, firstPageData, callback) {
-    console.log(`Querying all pages for ${repoUrl}`);
+    console.info(`Querying all pages for ${repoUrl}`);
 
     // We already have the data for the first page
     callback(firstPageData);
 
     // Go fetch all the remaining pages in parallel
     for (let parallelPageNumber = 2; parallelPageNumber <= lastPageNumber; parallelPageNumber++) {
-      console.log(`Querying page ${parallelPageNumber}/${lastPageNumber} for ${repoUrl}`);
+      console.info(`Querying page ${parallelPageNumber}/${lastPageNumber} for ${repoUrl}`);
       this.queryIssues(repoUrl, parallelPageNumber).then((result) => {
         callback(result);
       });
