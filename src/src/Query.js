@@ -35,8 +35,8 @@ class GitHubQuery extends Component {
     this.state = {
       useOfflineData: true,
       repoUrls: [
-        'https://api.github.com/repos/microsoft/react-native-windows',
-        'https://api.github.com/repos/microsoft/react-native-windows-samples',
+        'microsoft/react-native-windows',
+        'microsoft/react-native-windows-samples',
       ],
       issues: [],
     };
@@ -154,7 +154,8 @@ class GitHubQuery extends Component {
   }
 
   async queryIssues(repoUrl, pageNumber) {
-    let uri = `${repoUrl}/issues?state=open&sort=updated&direction=desc&page=${pageNumber}`;
+    let uri = `https://api.github.com/repos/${repoUrl}/issues?state=open&sort=updated&direction=desc&page=${pageNumber}`;
+    let pageId = `${repoUrl}#${pageNumber}`;
 
     let storedValue = undefined;
     if (this.state.useOfflineData) {
@@ -168,18 +169,18 @@ class GitHubQuery extends Component {
       try {
         if (storedValue !== null) {
           let storedJSONValue = JSON.parse(storedValue)
-          console.log(`Found cached value for ${pageNumber}: ${uri}`);
+          console.log(`Found cached value for ${pageId}`);
 
           if (this.isPageDataValid(storedJSONValue)) {
             resolve(storedJSONValue);
             return;
           } else {
-            console.warn(`Invalid cached value for ${pageNumber}`);
+            console.warn(`Invalid cached value for ${pageId}`);
             console.log(storedValue);
           }
         }
       } catch(e) {
-        console.warn(`Error parsing cached value for ${pageNumber}`);
+        console.warn(`Error parsing cached value for ${pageId}`);
         console.log(e);
         console.log(storedValue);
       }
@@ -192,13 +193,12 @@ class GitHubQuery extends Component {
       {
         let request = new XMLHttpRequest();
         request.onload = () => {
-          console.log(`Querying for page #${pageNumber}: ${uri} (useOfflineData=${this.state.useOfflineData})`);
-
+          console.log(`Handling query results for ${pageId}`);
           let parsedData;
           try {
             parsedData = JSON.parse(request.responseText);
           } catch (e) {
-            console.warn(`Error parsing json for ${pageNumber}`);
+            console.warn(`Error parsing json for ${pageId}`);
             console.log(e);
             console.log(request.responseText);
             reject();
@@ -216,17 +216,17 @@ class GitHubQuery extends Component {
             AsyncStorage.setItem(uri, JSON.stringify(pageData)).then(
               () => {
               }, (e) => {
-                console.log(`Error caching value for page #${pageNumber}`);
+                console.log(`Error caching value for ${pageId}`);
                 console.log(e);
                 console.log(pageData);
               });
           } catch (e) {
-            console.log(`Error starting to cache value for page #${pageNumber}`);
+            console.log(`Error starting to cache value for ${pageId}`);
             console.log(e);
           }
         };
         request.onerror = () => {
-          console.log(`Error fetching ${pageNumber}`);
+          console.log(`Error fetching ${pageId}`);
           reject();
         };
         request.open(
@@ -234,6 +234,7 @@ class GitHubQuery extends Component {
           uri,
           true,
         );
+        console.log(`Sending web request for ${pageId}: ${uri}`);
         request.setRequestHeader('User-Agent', appName);
         request.send();
       }
