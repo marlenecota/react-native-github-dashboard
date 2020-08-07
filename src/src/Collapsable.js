@@ -9,7 +9,11 @@ import {
 const CollapsableHeader = (props) => {
   let [expanded, setExpanded] = useState(props.expanded ?? true);
 
-  let level = parseInt(props.level) ?? 1;
+  let level = props.level ? parseInt(props.level) : 1;
+  if (isNaN(level)) {
+      level = 1;
+      console.warn(`Invalid level set for '${props.header}': ${props.level}`);
+  }
   let headerStyle;
   switch (parseInt(props.level)) {
     case 2: headerStyle = styles.h2; break;
@@ -26,11 +30,9 @@ const CollapsableHeader = (props) => {
     return (
       <View style={styles.horizontalCollapsable}>
         <TouchableWithoutFeedback 
-          accessibilityRole='header'
-          aria-level={level}
           onPress={() => setExpanded(!expanded)}>
           <View style={styles.collapsable}>
-            <Text accessibilityRole="header" style={headerStyle}>{props.header}</Text>
+            <Text accessibilityRole="header" aria-level={level} style={headerStyle}>{props.header}</Text>
             {expandIcon}
           </View>
         </TouchableWithoutFeedback>
@@ -43,18 +45,16 @@ const CollapsableHeader = (props) => {
     : <Text style={[headerStyle, styles.expandCollapseIcon]}>&#xE70D;</Text>;
 
     return (
-      <>
+      <View>
         <TouchableWithoutFeedback 
-          accessibilityRole='header'
-          aria-level={level}
           onPress={() => setExpanded(!expanded)}>
           <View style={styles.collapsable}>
-            <Text accessibilityRole="header" style={headerStyle}>{props.header}</Text>
+            <Text accessibilityRole="header" aria-level={level} style={headerStyle}>{props.header}</Text>
             {expandIcon}
           </View>
         </TouchableWithoutFeedback>
         {expanded ? props.children : null}
-      </>
+      </View>
     );
   }
 }

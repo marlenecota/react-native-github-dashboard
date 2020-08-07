@@ -14,24 +14,37 @@ import {
 } from './Label'
 
 const Issue = (props) => {
-  return (
-    <View style={styles.issue}>
+  // TODO: Enable option to not display extra label goop
+  let showLabels = true;
+  if (showLabels) {
+    return (
+      <View style={styles.issue}>
+        <TouchableHighlight
+          accessibilityRole='link'
+          href={props.item.url}
+          onPress={() => {Linking.openURL(props.item.url)}}>
+          <View style={styles.issueNumberContainer}>
+            <Text style={styles.issueNumber}>{props.item.number}</Text>
+          </View>
+        </TouchableHighlight>
+        <Text style={styles.issueTitle}>{props.item.title}</Text>
+        {props.item.labels.map(label => (
+          <View key={label.id} style={styles.labelListItem}>
+            <Label label={label}/>
+          </View>
+        ))}
+      </View>
+    );
+  } else {
+    return (
       <TouchableHighlight
         accessibilityRole='link'
         href={props.item.url}
         onPress={() => {Linking.openURL(props.item.url)}}>
-        <View style={styles.issueNumberContainer}>
-          <Text style={styles.issueNumber}>{props.item.number}</Text>
-        </View>
+        <Text style={styles.issueTitle}>{props.item.title}</Text>
       </TouchableHighlight>
-      <Text style={styles.issueTitle}>{props.item.title}</Text>
-      {props.item.labels.map(label => (
-        <View style={styles.labelListItem}>
-          <Label key={label.id} label={label}/>
-        </View>
-      ))}
-    </View>
-  );
+    );
+  }
 }
 
 class IssueList extends Component {
@@ -44,10 +57,11 @@ class IssueList extends Component {
 
   render() {
     let sectionsMap = this.props.list.reduce((groupedByMilestone, issue) => {
-      let group = groupedByMilestone[issue.milestone.id];
+      let group = groupedByMilestone[issue.milestone.title];
       if (group === undefined) {
-        group = groupedByMilestone[issue.milestone.id] = {
+        group = groupedByMilestone[issue.milestone.title] = {
           milestone: issue.milestone,
+          key: issue.milestone.title,
           data: [],
         };
       }
@@ -57,7 +71,7 @@ class IssueList extends Component {
 
     let sections = Object.keys(sectionsMap).map(section => sectionsMap[section]);
     let sortedSections = sections.sort((a,b) => {
-      if (a.milestone.id == b.milestone.id) {
+      if (a.milestone.title == b.milestone.title) {
         return 0;
       }
       let dateCompare = a.milestone.dueDate - b.milestone.dueDate;
@@ -92,6 +106,7 @@ class IssueList extends Component {
         {!this.state.collapsed && 
         <SectionList
           sections={sortedSections}
+          keyExtractor={(item) => item.id}
           renderSectionHeader={({section}) =>
             <Text
               accessibilityRole='header'
@@ -99,10 +114,8 @@ class IssueList extends Component {
               style={styles.milestoneSectionHeader}>{section.milestone.title}
             </Text>}
           renderItem={({item}) =>
-            <Issue
-              key={item.id}
-              item={item}>
-            </Issue>}
+            <Issue item={item}/>
+          }
           renderSectionFooter={() =>
             <View style={styles.milestoneSectionSeparator}/>
           }
