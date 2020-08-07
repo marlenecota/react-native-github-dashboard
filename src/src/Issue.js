@@ -29,8 +29,8 @@ const Issue = (props) => {
         </TouchableHighlight>
         <Text style={styles.issueTitle}>{props.item.title}</Text>
         {props.item.labels.map(label => (
-          <View style={styles.labelListItem}>
-            <Label key={label.id} label={label}/>
+          <View key={label.id} style={styles.labelListItem}>
+            <Label label={label}/>
           </View>
         ))}
       </View>
@@ -61,6 +61,7 @@ class IssueList extends Component {
       if (group === undefined) {
         group = groupedByMilestone[issue.milestone.title] = {
           milestone: issue.milestone,
+          key: issue.milestone.title,
           data: [],
         };
       }
@@ -105,6 +106,7 @@ class IssueList extends Component {
         {!this.state.collapsed && 
         <SectionList
           sections={sortedSections}
+          keyExtractor={(item) => item.id}
           renderSectionHeader={({section}) =>
             <Text
               accessibilityRole='header'
@@ -112,10 +114,8 @@ class IssueList extends Component {
               style={styles.milestoneSectionHeader}>{section.milestone.title}
             </Text>}
           renderItem={({item}) =>
-            <Issue
-              key={item.id}
-              item={item}>
-            </Issue>}
+            <Issue item={item}/>
+          }
           renderSectionFooter={() =>
             <View style={styles.milestoneSectionSeparator}/>
           }
