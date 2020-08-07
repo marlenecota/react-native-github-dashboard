@@ -253,7 +253,30 @@ class GitHubQuery extends Component {
           pageNumber = parseInt(pageData.linkHeaders.prev.pageNumber) + 1;
         }
         console.log(`Processing page #${pageNumber} (${pagesCompleted} of ${totalPages})`);
-        issues = issues.concat(pageData.data.map(current => this.processIssue(current)));
+        let pageIssues = pageData.data.map(current => this.processIssue(current));
+
+        // Build a lookup table of issue ids
+        // TODO: There's no need to redo this work per page
+        let issuesById = issues.reduce((issuesById, issue) => {
+          if (issuesById[issue.id] === undefined) {
+            issuesById[issue.id] = issue;
+          } else {
+            console.warn(`Issues list should not contain duplicates: ${issue.id}`);
+            console.log(issue);
+          }
+          return issuesById;
+        }, {});
+
+        // Append new issues to the list, but only if they are unique
+        // (duplicate issue ids will cause problems later)
+        pageIssues.forEach((issue) => {
+          if (issuesById[issue.id] !== undefined) { 
+            console.warn(`New page of issues contains already existing issue ${issue.id}`);
+          } else {
+            issues.push(issue);
+            issuesById[issue.id] = issue;
+          }
+        })
       }
       pagesCompleted++;
       let progress = pagesCompleted / totalPages;
@@ -311,17 +334,17 @@ class GitHubQuery extends Component {
     return {lastPageNumber, firstPageData};
   }
 
-  async queryAllPages(repoUrl, lastPageNumber, firstPageData, processPage) {
+  async queryAllPages(repoUrl, lastPageNumber, firstPageData, callback) {
     console.log(`Querying all pages for ${repoUrl}`);
 
     // We already have the data for the first page
-    processPage(firstPageData);
+    callback(firstPageData);
 
     // Go fetch all the remaining pages in parallel
     for (let parallelPageNumber = 2; parallelPageNumber <= lastPageNumber; parallelPageNumber++) {
       console.log(`Querying page ${parallelPageNumber}/${lastPageNumber} for ${repoUrl}`);
       this.queryIssues(repoUrl, parallelPageNumber).then((result) => {
-        processPage(result);
+        callback(result);
       });
     }
   }
