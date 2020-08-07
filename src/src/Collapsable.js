@@ -49,7 +49,7 @@ const CollapsableHeader = (props) => {
         <TouchableWithoutFeedback 
           onPress={() => setExpanded(!expanded)}>
           <View style={styles.collapsable}>
-            <Text accessibilityRole="header" aria-level={level} style={headerStyle}>Maybe{props.header}</Text>
+            <Text accessibilityRole="header" aria-level={level} style={headerStyle}>{props.header}</Text>
             {expandIcon}
           </View>
         </TouchableWithoutFeedback>
