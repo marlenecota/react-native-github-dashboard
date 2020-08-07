@@ -192,7 +192,7 @@ class GitHubQuery extends Component {
       {
         let request = new XMLHttpRequest();
         request.onload = () => {
-          console.log(`Querying for ${pageNumber}: ${uri} (useOfflineData=${this.state.useOfflineData})`);
+          console.log(`Querying for page #${pageNumber}: ${uri} (useOfflineData=${this.state.useOfflineData})`);
 
           let parsedData;
           try {
@@ -206,16 +206,22 @@ class GitHubQuery extends Component {
           }
 
           let pageData = {
-            data: JSON.parse(request.responseText),
+            data: parsedData,
             linkHeaders: this.parseLinkHeader(request)
           }
 
           resolve(pageData);
 
           try {
-            AsyncStorage.setItem(uri, JSON.stringify(pageData));
+            AsyncStorage.setItem(uri, JSON.stringify(pageData)).then(
+              () => {
+              }, (e) => {
+                console.log(`Error caching value for page #${pageNumber}`);
+                console.log(e);
+                console.log(pageData);
+              });
           } catch (e) {
-            console.log(`Error caching value for ${pageNumber}`);
+            console.log(`Error starting to cache value for page #${pageNumber}`);
             console.log(e);
           }
         };
@@ -319,7 +325,7 @@ class GitHubQuery extends Component {
     console.log(`Trying first page for ${repoUrl}`);
     let firstPageData = undefined;
     try {
-      firstPageData = await this.queryIssues(repoUrl);
+      firstPageData = await this.queryIssues(repoUrl, 1);
     } catch {
       console.log(`Error getting first page`);
       return {lastPageNumber: 0, firstPageData: {}};
