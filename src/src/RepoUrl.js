@@ -1,7 +1,6 @@
 import React, {useState} from 'react';
 import {
   View,
-  Switch,
   Text,
   TextInput,
   Button,
@@ -55,12 +54,6 @@ let RepoUrls = (props) => {
         }
         )}
         <Button title='+' onPress={addUrl}/>
-      </View>
-      <View style={{flexDirection: 'row', alignItems: 'center'}}>
-        <Switch
-          value={props.useCache} text='hello'
-          onValueChange={value => props.onUseCacheChanged(value)}/>
-        <Text>Use offline cache</Text>
       </View>
       <Button title='reset cache' onPress={() => props.clearCache()}/>
     </View>

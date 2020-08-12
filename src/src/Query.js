@@ -13,27 +13,10 @@ import AsyncStorage from '@react-native-community/async-storage';
 
 import {name as appName} from '../app.json';
 
-const offlineData = [
-  require('../offline/page1.json'),
-  require('../offline/page2.json'),
-  require('../offline/page3.json'),
-  require('../offline/page4.json'),
-  require('../offline/page5.json'),
-  require('../offline/page6.json'),
-  require('../offline/page7.json'),
-  require('../offline/page8.json'),
-  require('../offline/page9.json'),
-  require('../offline/page10.json'),
-  require('../offline/page11.json'),
-  require('../offline/page12.json'),
-  require('../offline/page13.json'),
-];
-
 class GitHubQuery extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      useOfflineData: true,
       repoUrls: [
         'microsoft/react-native-windows',
         'microsoft/react-native-windows-samples',
@@ -120,7 +103,7 @@ class GitHubQuery extends Component {
     keys.forEach(async (key) => {
       try {
         await AsyncStorage.removeItem(key);
-        console.log(`Removed from cache ${key}`);
+        console.info(`Removed from cache ${key}`);
       } catch(e) {
         console.log(`Error removing ${key}`);
         console.log(e);
@@ -158,18 +141,16 @@ class GitHubQuery extends Component {
     let pageId = `${repoUrl}#${pageNumber}`;
 
     let storedValue = undefined;
-    if (this.state.useOfflineData) {
-      try {
-        storedValue = await AsyncStorage.getItem(uri);
-      } catch(e) {
-      }
+    try {
+      storedValue = await AsyncStorage.getItem(pageId);
+    } catch(e) {
     }
 
     return new Promise((resolve, reject) => {
       try {
         if (storedValue !== null) {
-          let storedJSONValue = JSON.parse(storedValue)
-          console.log(`Found cached value for ${pageId}`);
+          let storedJSONValue = JSON.parse(storedValue);
+          console.info(`Found cached value for ${pageId}`);
 
           if (this.isPageDataValid(storedJSONValue)) {
             resolve(storedJSONValue);
@@ -185,63 +166,58 @@ class GitHubQuery extends Component {
         console.log(storedValue);
       }
 
-      // TODO: This should be come effectively placeholder data for if you've never been online (no cache)
-      /*if (this.state.useOfflineData) {
-        let pageData = offlineData[pageNumber - 1];
-        resolve(pageData);
-      } else*/
-      {
-        let request = new XMLHttpRequest();
-        request.onload = () => {
-          console.log(`Handling query results for ${pageId}`);
-          let parsedData;
-          try {
-            parsedData = JSON.parse(request.responseText);
-          } catch (e) {
-            console.warn(`Error parsing json for ${pageId}`);
-            console.log(e);
-            console.log(request.responseText);
-            reject();
-            return;
-          }
-
-          let pageData = {
-            data: parsedData,
-            linkHeaders: this.parseLinkHeader(request)
-          }
-
-          resolve(pageData);
-
-          try {
-            AsyncStorage.setItem(uri, JSON.stringify(pageData)).then(
-              () => {
-              }, (e) => {
-                console.log(`Error caching value for ${pageId}`);
-                console.log(e);
-                console.log(pageData);
-              });
-          } catch (e) {
-            console.log(`Error starting to cache value for ${pageId}`);
-            console.log(e);
-          }
-        };
-        request.onerror = () => {
-          console.log(`Error fetching ${pageId}`);
+      let request = new XMLHttpRequest();
+      request.onload = () => {
+        console.info(`Handling query results for ${pageId}`);
+        let parsedData;
+        try {
+          parsedData = JSON.parse(request.responseText);
+        } catch (e) {
+          console.warn(`Error parsing json for ${pageId}`);
+          console.log(e);
+          console.log(request.responseText);
           reject();
-        };
-        request.open(
-          'get',
-          uri,
-          true,
-        );
-        console.log(`Sending web request for ${pageId}: ${uri}`);
-        request.setRequestHeader('User-Agent', appName);
-        request.send();
-      }
+          return;
+        }
+
+        let pageData = {
+          data: parsedData,
+          linkHeaders: this.parseLinkHeader(request)
+        }
+
+        resolve(pageData);
+
+        try {
+          AsyncStorage.setItem(pageId, JSON.stringify(pageData)).then(
+            () => {
+              console.info(`Saved cached value for ${pageId}`);
+            }, (e) => {
+              console.log(`Error caching value for ${pageId}`);
+              console.log(e);
+              console.log(pageData);
+            });
+        } catch (e) {
+          console.log(`Error starting to cache value for ${pageId}`);
+          console.log(e);
+        }
+      };
+      request.onerror = () => {
+        console.log(`Error fetching ${pageId}`);
+        reject();
+      };
+      request.open(
+        'get',
+        uri,
+        true,
+      );
+      console.info(`Sending web request for ${pageId}: ${uri}`);
+      request.setRequestHeader('User-Agent', appName);
+      request.send();
     });
   }
 
   async queryAllIssues() {
+    console.time("queryAllIssues");
     this.setState({
       issues: [],
       progress: 0.0,
@@ -259,7 +235,7 @@ class GitHubQuery extends Component {
         } else if (pageData.linkHeaders.prev) {
           pageNumber = parseInt(pageData.linkHeaders.prev.pageNumber) + 1;
         }
-        console.log(`Processing page #${pageNumber} (${pagesCompleted} of ${totalPages})`);
+        console.info(`Processing page #${pageNumber} (${pagesCompleted} of ${totalPages})`);
         let pageIssues = pageData.data.map(current => this.processIssue(current));
 
         // Build a lookup table of issue ids
@@ -289,6 +265,7 @@ class GitHubQuery extends Component {
       let progress = pagesCompleted / totalPages;
   
       if (pagesCompleted >= totalPages) {
+        console.timeEnd("queryAllIssues");
         this.setState({
           progress: progress,
           issues: issues,
@@ -300,15 +277,14 @@ class GitHubQuery extends Component {
       }
     }
 
-    console.log('Querying urls:');
-    console.log(this.state.repoUrls);
+    console.info('Querying urls:');
+    console.info(this.state.repoUrls);
 
     // Query for the first page of data, which has first/last page information
     // (so we can display accurate progress)
     let firstPageData = [];
     for (let index = 0; index < this.state.repoUrls.length; index++) {
       let firstPage = await this.queryFirstPage(this.state.repoUrls[index]);
-      console.log(firstPage);
       firstPageData.push(firstPage);
       totalPages += firstPage.lastPageNumber;
     }
@@ -323,7 +299,7 @@ class GitHubQuery extends Component {
   }
 
   async queryFirstPage(repoUrl) {
-    console.log(`Trying first page for ${repoUrl}`);
+    console.info(`Trying first page for ${repoUrl}`);
     let firstPageData = undefined;
     try {
       firstPageData = await this.queryIssues(repoUrl, 1);
@@ -337,19 +313,19 @@ class GitHubQuery extends Component {
     } 
 
     let lastPageNumber = firstPageData.linkHeaders.last ? parseInt(firstPageData.linkHeaders.last.pageNumber): 1;
-    console.log(`Last page # is ${lastPageNumber}`);
+    console.info(`Last page # is ${lastPageNumber}`);
     return {lastPageNumber, firstPageData};
   }
 
   async queryAllPages(repoUrl, lastPageNumber, firstPageData, callback) {
-    console.log(`Querying all pages for ${repoUrl}`);
+    console.info(`Querying all pages for ${repoUrl}`);
 
     // We already have the data for the first page
     callback(firstPageData);
 
     // Go fetch all the remaining pages in parallel
     for (let parallelPageNumber = 2; parallelPageNumber <= lastPageNumber; parallelPageNumber++) {
-      console.log(`Querying page ${parallelPageNumber}/${lastPageNumber} for ${repoUrl}`);
+      console.info(`Querying page ${parallelPageNumber}/${lastPageNumber} for ${repoUrl}`);
       this.queryIssues(repoUrl, parallelPageNumber).then((result) => {
         callback(result);
       });
@@ -363,21 +339,15 @@ class GitHubQuery extends Component {
   render() {
     return (
       <>
-        <CollapsableHeader header='repo' expanded={false}>
+        <CollapsableHeader header='settings' level={2} expanded={false} style={{backgroundColor: '#eeeeee'}}>
           <RepoUrls
             urls={this.state.repoUrls}
-            useCache={this.state.useOfflineData}
             clearCache={() => {
               this.clearCache();
             }}
             onUrlsChanged={urls => {
               this.setState({
                 repoUrls: urls,
-              }, () => this.queryAllIssues());
-            }}
-            onUseCacheChanged={useCache => {
-              this.setState({
-                useOfflineData: useCache,
               }, () => this.queryAllIssues());
             }}/>
         </CollapsableHeader>
