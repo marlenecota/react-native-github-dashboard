@@ -179,6 +179,7 @@ const GroupedLabelFilterList = (props) => {
     }});
   // Sort groups by label 
   let sortedSections = sections.sort((a,b) => {
+    // TODO: Sorting by collapsed state would help create a compact layout
     if (a.category !== b.category) {
       if ((a.category === defaultLabelCategory)) {
         return -1;
@@ -192,6 +193,9 @@ const GroupedLabelFilterList = (props) => {
 
   let areAnyRequired = props.requiredLabels.length > 0;
   let areAnyForbidden = props.forbiddenLabels.length > 0;
+
+  // TODO: Enable option to not display extra label goop
+  let showLabelStats = true;
 
   return (
     <View style={{alignItems: 'flex-start'}}> 
@@ -222,20 +226,26 @@ const GroupedLabelFilterList = (props) => {
                   onPress={(label) => {
                     props.addToFilter(label);
                 }}>
-                  <Text style={[styles.labelText, {color: foregroundColor}]}>: {label.count}</Text>
-                  {(isRequired ?
-                    <Text style={[styles.filterIcon, {color: foregroundColor}]}>&#xE71C;</Text> :
-                    null)
+                  {showLabelStats
+                    ? <Text style={[styles.labelText, {color: foregroundColor}]}>: {label.count}</Text>
+                    : null
                   }
-                  <TouchableWithoutFeedback
-                    onPress={() => {
-                      props.filterOut(label);
-                    }}>
-                    {isForbidden
-                    ? <Text style={[styles.closeIcon, {color: foregroundColor}]}>&#xE710;</Text>
-                    : <Text style={[styles.closeIcon, {color: foregroundColor}]}>&#xE711;</Text>
-                    }
-                  </TouchableWithoutFeedback>
+                  {isRequired
+                    ? <Text style={[styles.filterIcon, {color: foregroundColor}]}>&#xE71C;</Text>
+                    : null
+                  }
+                  {isRequired || isForbidden // Only show close button if item has been expanded
+                    ? <TouchableWithoutFeedback
+                      onPress={() => {
+                        props.filterOut(label);
+                      }}>
+                      {isForbidden
+                      ? <Text style={[styles.closeIcon, {color: foregroundColor}]}>&#xE710;</Text>
+                      : <Text style={[styles.closeIcon, {color: foregroundColor}]}>&#xE711;</Text>
+                      }
+                    </TouchableWithoutFeedback>
+                    : null
+                  }
                 </Label>
                 
               </View>          

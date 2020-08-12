@@ -1,4 +1,5 @@
 import React, {Component} from 'react';
+import { View } from 'react-native';
 
 import { IssueList } from './Issue'
 import { GroupedLabelFilterList } from './Label'
@@ -122,17 +123,23 @@ class Page extends Component {
 
     return (
       <>
-        <CollapsableHeader header="Milestones">
+        <CollapsableHeader header="Milestones" level={2}>
           <MilestoneList
             milestonesById={milestonesById}
             requiredMilestone={this.state.requiredMilestone}
             addToFilter={(milestone) => {
-              this.setState({
-                requiredMilestone: milestone.title,
-              });
+              if (this.state.requiredMilestone == milestone.title) {
+                this.setState({
+                  requiredMilestone: undefined,
+                });
+              } else {
+                this.setState({
+                  requiredMilestone: milestone.title,
+                });
+              }
           }}/>
         </CollapsableHeader>
-        <CollapsableHeader header="Labels">
+        <CollapsableHeader header="Labels" level={2} style={{backgroundColor: '#eeeeee'}}>
           <GroupedLabelFilterList
             labelsById={labelsById}
             requiredLabels={this.state.requiredLabels}
@@ -142,7 +149,7 @@ class Page extends Component {
             resetFilters={resetLabelFilters}
           />
         </CollapsableHeader>
-        <CollapsableHeader header="Issues">
+        <CollapsableHeader header="Issues" level={2}>
           <AssigneeList
             issuesByAssignee={issuesByAssignee}
             requiredLabels={this.state.requiredLabels}/>

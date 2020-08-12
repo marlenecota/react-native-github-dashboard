@@ -339,7 +339,7 @@ class GitHubQuery extends Component {
   render() {
     return (
       <>
-        <CollapsableHeader header='repo' expanded={false}>
+        <CollapsableHeader header='settings' level={2} expanded={false} style={{backgroundColor: '#eeeeee'}}>
           <RepoUrls
             urls={this.state.repoUrls}
             clearCache={() => {

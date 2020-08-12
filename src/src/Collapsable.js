@@ -29,10 +29,15 @@ const CollapsableHeader = (props) => {
 
     return (
       <View style={styles.horizontalCollapsable}>
-        <TouchableWithoutFeedback 
+        <TouchableWithoutFeedback
           onPress={() => setExpanded(!expanded)}>
           <View style={styles.collapsable}>
-            <Text accessibilityRole="header" aria-level={level} style={headerStyle}>{props.header}</Text>
+            <Text
+                accessibilityRole="header"
+                aria-level={level}
+                style={headerStyle}>
+                {props.header}
+            </Text>
             {expandIcon}
           </View>
         </TouchableWithoutFeedback>
@@ -45,11 +50,16 @@ const CollapsableHeader = (props) => {
     : <Text style={[headerStyle, styles.expandCollapseIcon]}>&#xE70D;</Text>;
 
     return (
-      <View>
+      <View style={props.style}>
         <TouchableWithoutFeedback 
           onPress={() => setExpanded(!expanded)}>
           <View style={styles.collapsable}>
-            <Text accessibilityRole="header" aria-level={level} style={headerStyle}>{props.header}</Text>
+            <Text
+                accessibilityRole="header"
+                aria-level={level}
+                style={headerStyle}>
+                {props.header}
+            </Text>
             {expandIcon}
           </View>
         </TouchableWithoutFeedback>
