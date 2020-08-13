@@ -6,12 +6,12 @@
   xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
   IgnorableNamespaces="uap mp">
 
- <Identity
-    Name="9f2a37e5-3bca-4bc8-80bc-7ae88c7d42ec"
+  <Identity
+    Name="40ae1a44-01ef-4456-962f-396d0ee94c16"
     Publisher="CN=cglein"
     Version="1.0.0.0" />
 
-  <mp:PhoneIdentity PhoneProductId="9f2a37e5-3bca-4bc8-80bc-7ae88c7d42ec" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
+  <mp:PhoneIdentity PhoneProductId="40ae1a44-01ef-4456-962f-396d0ee94c16" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
     <DisplayName>github dashboard</DisplayName>
@@ -28,7 +28,8 @@
   </Resources>
 
   <Applications>
-    <Application Id="App"
+    <Application
+      Id="App"
       Executable="$targetnametoken$.exe"
       EntryPoint="src.App">
       <uap:VisualElements
