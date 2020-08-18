@@ -9,7 +9,7 @@
   <Identity
     Name="34515PNBIndustries.GitHubDashboard"
     Publisher="CN=5C24357C-C5B6-4999-B1F2-13387994FDD6"
-    Version="1.0.0.0" />
+    Version="1.0.4.0" />
 
   <mp:PhoneIdentity PhoneProductId="4e369546-9216-4fa4-8eeb-f34f85a60843" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
